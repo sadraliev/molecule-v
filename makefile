@@ -9,7 +9,7 @@ lint:
 watch:
 	npm run test:watch
 
-mongo:
+mongodb:
 	docker-compose --env-file .env.development.local up mongodb -d
 down:
 	docker-compose down -v

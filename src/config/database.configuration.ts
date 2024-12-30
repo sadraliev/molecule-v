@@ -1,11 +1,11 @@
 import { registerAs } from '@nestjs/config';
 
-export const DATABASE_CONFIG = 'database';
+export const DATABASE_CONFIG_TAG = 'database';
 export type DatabaseConfig = {
   uri: string;
 };
 
-export default registerAs(DATABASE_CONFIG, (): DatabaseConfig => {
+export default registerAs(DATABASE_CONFIG_TAG, (): DatabaseConfig => {
   const user = process.env.DATABASE_USER;
   const password = process.env.DATABASE_PASSWORD;
   const host = process.env.DATABASE_HOST;
