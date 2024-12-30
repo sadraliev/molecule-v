@@ -10,11 +10,18 @@ const envSchema = z.object({
     .transform((val) => parseInt(val, 10))
     .default('3000'),
 
-  DATABASE_HOST: z.string().min(1, 'DATABASE_HOST is required'),
-  DATABASE_PORT: z.string().transform((port) => parseInt(port, 10)),
+  DATABASE_HOST: z
+    .string()
+    .min(1, 'DATABASE_HOST is required')
+    .default('localhost'),
+  DATABASE_PORT: z
+    .string()
+    .transform((port) => parseInt(port, 10))
+    .refine((port) => !isNaN(port) && port > 0, {
+      message: 'DATABASE_PORT must be a valid number',
+    }),
   DATABASE_USER: z.string().min(1, 'DATABASE_USER is required'),
   DATABASE_PASSWORD: z.string().min(1, 'DATABASE_PASSWORD is required'),
-  DATABASE_NAME: z.string().min(1, 'DATABASE_NAME is required'),
 });
 
 export type EnvSchema = z.infer<typeof envSchema>;
