@@ -13,3 +13,6 @@ mongodb:
 	docker-compose --env-file .env.development.local up mongodb -d
 down:
 	docker-compose down -v
+
+commit:
+	npm run commit
