@@ -21,15 +21,7 @@ export type PoSId = PropType<PoS, 'id'>;
 
 type Customer = {
   id: string;
-  phone_number: PhoneNumber;
+  phoneNumber: PhoneNumber;
   name: string;
 };
 export type CustomerId = PropType<Customer, 'id'>;
-
-// type Stamp = {
-//   id: Uuid;
-//   usage_id: UsageId;
-//   pos_id: PoSId;
-//   created_datetime: ISODate;
-// };
-// type StampId = PropType<Stamp, 'id'>;

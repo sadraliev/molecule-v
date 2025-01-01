@@ -17,14 +17,14 @@ export type Voucher = {
 
   status: VoucherState;
   name: string;
-  promotion_name: string;
+  promotionName: string;
 
-  issued_by: UserId;
-  issued_at: ISODate;
-  expired_at: ISODate;
+  issuedBy: UserId;
+  issuedAt: ISODate;
+  expiredAt: ISODate;
 
-  created_at: ISODate;
-  updated_at: ISODate;
+  createdAt: ISODate;
+  updatedAt: ISODate;
 };
 export type VoucherId = PropType<Voucher, 'id'>;
 
@@ -48,7 +48,9 @@ export type Policy = {
    *
    * default: false
    */
-  per_customer_reissue: false | 'auto' | number;
+  perCustomerReissue: false | 'auto' | number;
+
+  stampsRequiredForReward: number;
 };
 
 export type PolicyId = PropType<Policy, 'id'>;
@@ -71,15 +73,23 @@ export type HolderState = (typeof holderState)[number];
 type Holder = {
   id: Uuid;
 
-  voucher_id: VoucherId;
-  holder_id: CustomerId;
+  voucherId: VoucherId;
+  holderId: CustomerId;
 
   status: HolderState;
-  redeem_pos?: PoSId;
-  completed_at?: ISODate;
-  redeem_at?: ISODate;
+  redeemPosId?: PoSId;
+  completedAt?: ISODate;
+  redeemAt?: ISODate;
 
-  created_at: ISODate;
-  updated_at: ISODate;
+  createdAt: ISODate;
+  updatedAt: ISODate;
 };
 export type HolderId = PropType<Holder, 'id'>;
+
+type Stamp = {
+  id: Uuid;
+  holderId: HolderId;
+  posId: PoSId;
+  createdAt: ISODate;
+};
+export type StampId = PropType<Stamp, 'id'>;
