@@ -1,9 +1,15 @@
-export type PropType<T, K extends keyof T> = T[K];
-
-export type Uuid = string;
+export type Uuid = string; // uuid
 export type ISODate = string; // 'ISO 8601';
 export type PhoneNumber = string; //'E.164';
 export type EmailAddress = string; // Validated against RFC 5322 or RFC 6531
+
+export type PropType<T, K extends keyof T> = T[K];
+export type Document<T> = T & {
+  _id: Uuid;
+  createdAt: ISODate;
+  updatedAt: ISODate;
+  __v: number;
+};
 
 type User = {
   id: Uuid;

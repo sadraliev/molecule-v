@@ -1,4 +1,5 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { DATABASE_CONFIG_TAG, DatabaseConfig } from './database.configuration';
 
 export const mongooseConfig = () => ({

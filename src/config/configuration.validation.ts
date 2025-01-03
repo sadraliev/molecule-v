@@ -1,6 +1,7 @@
 import { TypeOf, z } from 'zod';
 
-const environment = z.enum(['local', 'development', 'testing', 'production']);
+const environment = z.enum(['local', 'development', 'test', 'production']);
+
 export type Environment = z.infer<typeof environment>;
 
 const envSchema = z.object({
@@ -35,6 +36,7 @@ declare global {
 
 export const validate = (config: Record<string, unknown>) => {
   const validation = envSchema.safeParse(config);
+
   if (!validation.success) {
     console.error(
       'Environment variable validation error:',
@@ -42,5 +44,6 @@ export const validate = (config: Record<string, unknown>) => {
     );
     throw new Error('Invalid environment configuration');
   }
+
   return validation.data;
 };
