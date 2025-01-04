@@ -1,6 +1,6 @@
 import appConfiguration from './app.configuration';
-import databaseConfiguration from './database.configuration';
 import { validate } from './configuration.validation';
+import databaseConfiguration from './database.configuration';
 import { mongooseConfig } from './mongoose.config';
 
 const rootConfig = () => ({
