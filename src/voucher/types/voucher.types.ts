@@ -30,21 +30,26 @@ export type Voucher = {
 export type VoucherId = string;
 
 export type IssueOptions = 'auto' | 'custom';
-export type Policy = {
-  name: string;
-  /**s
-   * Specifies the reissue policy for the voucher:
-   * - `'auto'`: Automatic reissue is enabled.
-   * - `custom`: Maximum number of reissues allowed for the voucher.
-   * This field determines the total number of reissues across all consumers.
-   *
-   * default: "auto"
-   */
-  issue: IssueOptions;
-  maxReissue?: number;
-
-  stampsRequiredForReward: number;
-};
+export type Policy =
+  | {
+      name: string;
+      /**s
+       * Specifies the reissue policy for the voucher:
+       * - `'auto'`: Automatic reissue is enabled.
+       * - `custom`: Maximum number of reissues allowed for the voucher.
+       * This field determines the total number of reissues across all consumers.
+       *
+       * default: "auto"
+       */
+      issueMode: 'auto';
+      stampsRequiredForReward: number;
+    }
+  | {
+      name: string;
+      issueMode: 'custom';
+      maxReissue: number;
+      stampsRequiredForReward: number;
+    };
 
 export type PolicyId = string;
 

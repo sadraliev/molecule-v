@@ -9,6 +9,8 @@ import {
 } from 'src/voucher/schemas/voucher.schema';
 import * as request from 'supertest';
 
+import { createVoucher } from './stubs/voucher.stubs';
+
 describe('Voucher controller (e2e)', () => {
   let app: INestApplication;
   let voucherModel: VoucherModel;
@@ -36,12 +38,11 @@ describe('Voucher controller (e2e)', () => {
   });
 
   it('Create a new voucher with default setting', () => {
+    const voucherWithAutoIssue = createVoucher();
+
     return request(app.getHttpServer())
       .post('/vouchers')
-      .send({
-        name: 'John',
-        last_name: 'Doe',
-      })
+      .send(voucherWithAutoIssue)
       .expect(201);
   });
 });

@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Camelify } from 'src/lib';
 
 import { CreateVoucherDto } from './dtos/create-voucher.dto';
+import {
+  getPolicy,
+  getReward,
+  makeVoucher,
+} from './helpers/voucher.calculations';
 import { InjectPolicy, PolicyModel } from './schemas/policy.schema';
 import {
   InjectReward,
@@ -22,27 +26,19 @@ export class VoucherService {
     private readonly voucherMidel: VoucherModel,
   ) {}
 
-  async create(
-    _createVoucher: Camelify<CreateVoucherDto>,
-  ): Promise<RewardDefinition> {
+  async create(createVoucher: CreateVoucherDto): Promise<RewardDefinition> {
     try {
-      const mockPolicy = {
-        name: 'Loyalty Program Policy',
-        issue: 'auto',
-        stampsRequiredForReward: 5,
-      };
-      const mockReward = {
-        name: 'Free Coffee',
-      };
-
-      const createdCat = new this.rewardModel(mockReward);
-      const createdPolicy = new this.policyModel(mockPolicy);
-      const policy = await createdPolicy.save();
-      const reward = await createdCat.save();
+      const voucher = makeVoucher(createVoucher);
+      const reward = getReward(voucher);
+      const policy = getPolicy(voucher);
+      const createdReward = new this.rewardModel(reward);
+      const createdPolicy = new this.policyModel(policy);
+      const savedpolicy = await createdPolicy.save();
+      const savedreward = await createdReward.save();
 
       const mockVoucher = {
-        rewardId: reward.id,
-        policyId: policy.id,
+        rewardId: savedreward.id,
+        policyId: savedpolicy.id,
         status: 'draft',
         name: 'Special Discount Voucher',
         promotionName: 'Black Friday Sale',
@@ -51,7 +47,8 @@ export class VoucherService {
       };
 
       const createdVoucher = new this.voucherMidel(mockVoucher);
-      const voucher = await createdVoucher.save();
+
+      await createdVoucher.save();
       const response = {
         policy,
         reward,

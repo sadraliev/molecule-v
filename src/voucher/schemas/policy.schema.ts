@@ -1,10 +1,10 @@
 import { InjectModel, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
 
-import { Policy, IssueOptions } from '../types/voucher.types';
+import { IssueOptions } from '../types/voucher.types';
 
 @Schema({ timestamps: true })
-export class PolicyDefinition implements Policy {
+export class PolicyDefinition {
   @Prop({ type: String, name: 'name', required: true })
   name: string;
 
