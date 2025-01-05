@@ -18,3 +18,10 @@ down:
 
 commit:
 	npm run commit
+	
+refine-branches:
+	@echo "Fetch and prune remote branches"
+	git fetch --all --prune
+	
+	@echo "Deleting local branches except 'main' and 'dev'..."
+	git branch | grep -vE '^\*|main|dev' | xargs git branch -D
