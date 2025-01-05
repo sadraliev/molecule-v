@@ -1,5 +1,8 @@
 import { CustomerId, ISODate, PoSId, UserId, Uuid } from 'src/lib';
 
+import { PolicyId } from './policy.types';
+import { RewardId } from './reward.types';
+
 /**
  * Status of the voucher lifecycle:
  * `draft`: The voucher is not published: It can be edited. Available only to the creator.
@@ -24,42 +27,12 @@ export type Voucher = {
   promotionName: string;
 
   issuedBy: UserId;
-  issuedAt: ISODate;
-  expiredAt: ISODate;
+  issueAt: ISODate;
+  expirationAt: ISODate;
 };
 export type VoucherId = string;
 
-export type IssueOptions = 'auto' | 'custom';
-export type Policy =
-  | {
-      name: string;
-      /**s
-       * Specifies the reissue policy for the voucher:
-       * - `'auto'`: Automatic reissue is enabled.
-       * - `custom`: Maximum number of reissues allowed for the voucher.
-       * This field determines the total number of reissues across all consumers.
-       *
-       * default: "auto"
-       */
-      issueMode: 'auto';
-      stampsRequiredForReward: number;
-    }
-  | {
-      name: string;
-      issueMode: 'custom';
-      maxReissue: number;
-      stampsRequiredForReward: number;
-    };
-
-export type PolicyId = string;
-
-export type Reward = {
-  name: string;
-  description?: string;
-  termsUrl?: string;
-};
-export type RewardId = string;
-
+export type VoucherCreationRequest = Omit<Voucher, 'status'>;
 /**
  * Status of the voucher lifecycle:
  * - `active`: Default state. The voucher becomes active when the first stamp is received.

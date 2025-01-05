@@ -1,7 +1,7 @@
 import { InjectModel, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
 
-import { Reward } from '../types/voucher.types';
+import { Reward } from '../types/reward.types';
 
 @Schema({ timestamps: true })
 export class RewardDefinition implements Reward {

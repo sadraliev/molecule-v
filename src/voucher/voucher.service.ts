@@ -1,18 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { UserId } from 'src/lib';
 
 import { CreateVoucherDto } from './dtos/create-voucher.dto';
 import {
   getPolicy,
   getReward,
+  getVoucher,
   makeVoucher,
 } from './helpers/voucher.calculations';
 import { InjectPolicy, PolicyModel } from './schemas/policy.schema';
+import { InjectReward, RewardModel } from './schemas/reward.schema';
 import {
-  InjectReward,
-  RewardDefinition,
-  RewardModel,
-} from './schemas/reward.schema';
-import { InjectVoicher, VoucherModel } from './schemas/voucher.schema';
+  InjectVoicher,
+  VoucherDocument,
+  VoucherModel,
+} from './schemas/voucher.schema';
 
 @Injectable()
 export class VoucherService {
@@ -23,41 +25,24 @@ export class VoucherService {
     @InjectPolicy()
     private readonly policyModel: PolicyModel,
     @InjectVoicher()
-    private readonly voucherMidel: VoucherModel,
+    private readonly voucherModel: VoucherModel,
   ) {}
 
-  async create(createVoucher: CreateVoucherDto): Promise<RewardDefinition> {
-    try {
-      const voucher = makeVoucher(createVoucher);
-      const reward = getReward(voucher);
-      const policy = getPolicy(voucher);
-      const createdReward = new this.rewardModel(reward);
-      const createdPolicy = new this.policyModel(policy);
-      const savedpolicy = await createdPolicy.save();
-      const savedreward = await createdReward.save();
+  async create(
+    createVoucher: CreateVoucherDto,
+    userId: UserId,
+  ): Promise<VoucherDocument> {
+    const withUser = makeVoucher(userId, getVoucher(createVoucher));
 
-      const mockVoucher = {
-        rewardId: savedreward.id,
-        policyId: savedpolicy.id,
-        status: 'draft',
-        name: 'Special Discount Voucher',
-        promotionName: 'Black Friday Sale',
-        issuedAt: new Date().toISOString(),
-        expiredAt: new Date(new Date().setDate(new Date().getDate() + 30)),
-      };
+    const policy = await new this.policyModel(getPolicy(createVoucher)).save();
 
-      const createdVoucher = new this.voucherMidel(mockVoucher);
+    const withPolicy = withUser(policy.id);
 
-      await createdVoucher.save();
-      const response = {
-        policy,
-        reward,
-        voucher,
-      };
+    const reward = await new this.rewardModel(getReward(createVoucher)).save();
 
-      return response as any;
-    } catch (error) {
-      throw error;
-    }
+    const fulledVoucher = withPolicy(reward.id);
+    const voucher = await new this.voucherModel(fulledVoucher).save();
+
+    return voucher;
   }
 }

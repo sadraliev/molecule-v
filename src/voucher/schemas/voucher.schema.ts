@@ -1,12 +1,9 @@
 import { InjectModel, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model, Types } from 'mongoose';
 
-import {
-  PolicyId,
-  RewardId,
-  Voucher,
-  VoucherState,
-} from '../types/voucher.types';
+import { PolicyId } from '../types/policy.types';
+import { RewardId } from '../types/reward.types';
+import { Voucher, VoucherState } from '../types/voucher.types';
 
 import { POLICY_COLLECTION_NAME } from './policy.schema';
 import { REWARD_COLLECTION_NAME } from './reward.schema';
@@ -28,14 +25,14 @@ export class VoucherDefinition implements Voucher {
   @Prop({ type: String, required: true })
   promotionName: string;
 
-  // @Prop({ type: Types.ObjectId, required: true })
-  issuedBy: string; // UserId
+  @Prop({ type: String, required: true })
+  issuedBy: string;
 
   @Prop({ type: Date, required: true })
-  issuedAt: string; // ISOstring
+  issueAt: string;
 
   @Prop({ type: Date, required: true })
-  expiredAt: string; // ISODate
+  expirationAt: string;
 }
 export type VoucherDocument = HydratedDocument<VoucherDefinition>;
 export type VoucherModel = Model<VoucherDefinition>;

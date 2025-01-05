@@ -1,15 +1,16 @@
 import { InjectModel, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
 
-import { IssueOptions } from '../types/voucher.types';
+import { IssueMode, issueModes, Policy } from '../types/policy.types';
 
 @Schema({ timestamps: true })
-export class PolicyDefinition {
+export class PolicyDefinition implements Policy {
+  maxReissue: number;
   @Prop({ type: String, name: 'name', required: true })
   name: string;
 
-  @Prop({ type: String, required: true })
-  issue: IssueOptions;
+  @Prop({ type: String, enum: issueModes, required: true })
+  issueMode: IssueMode;
 
   @Prop({ type: Number, name: 'max_reissues' })
   maxReissues: number;
