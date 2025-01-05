@@ -32,9 +32,14 @@ export class VoucherController {
 
       const userId = authorization.split(' ')[1];
 
-      await this.voucherService.create(body, userId);
+      const { id } = await this.voucherService.create(body, userId);
 
-      return { ok: true };
+      return {
+        ok: true,
+        payload: {
+          id,
+        },
+      };
     } catch (error) {
       this.logger.warn(error);
 
