@@ -6,8 +6,10 @@ format:
 	npm run format
 lint:
 	npm run lint
-watch:
+unit:
 	npm run test:watch
+e2e:
+	npm run test:e2e -- $(file) --watch
 
 mongodb:
 	docker-compose --env-file .env.development.local up mongodb -d

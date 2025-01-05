@@ -1,4 +1,5 @@
 import { registerAs } from '@nestjs/config';
+
 import { Environment } from './configuration.validation';
 
 export const APP_CONFIG_TAG = 'app';

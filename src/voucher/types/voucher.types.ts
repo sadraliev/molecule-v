@@ -1,17 +1,24 @@
-import { CustomerId, ISODate, PoSId, PropType, UserId, Uuid } from 'src/lib';
+import { CustomerId, ISODate, PoSId, UserId, Uuid } from 'src/lib';
+
+import { PolicyId } from './policy.types';
+import { RewardId } from './reward.types';
 
 /**
  * Status of the voucher lifecycle:
  * `draft`: The voucher is not published: It can be edited. Available only to the creator.
  * `published`: The voucher is published: Cannot be edited. Available to everyone.
  * `expired`: The voucher has expired: Available only to the creator. Cannot be edited.
+ * `revoke` : Revoke the remaining vouchers
  */
-export const voucherState = ['draft', 'published', 'expired'] as const;
+export const voucherState = [
+  'draft',
+  'published',
+  'expired',
+  'revoke',
+] as const;
 export type VoucherState = (typeof voucherState)[number];
 
 export type Voucher = {
-  id: Uuid;
-
   rewardId: RewardId;
   policyId: PolicyId;
 
@@ -20,47 +27,12 @@ export type Voucher = {
   promotionName: string;
 
   issuedBy: UserId;
-  issuedAt: ISODate;
-  expiredAt: ISODate;
-
-  createdAt: ISODate;
-  updatedAt: ISODate;
+  issueAt: ISODate;
+  expirationAt: ISODate;
 };
-export type VoucherId = PropType<Voucher, 'id'>;
+export type VoucherId = string;
 
-export type Policy = {
-  id: Uuid;
-  /**
-   * Specifies the reissue policy for the voucher:
-   * - `'auto'`: Automatic reissue is enabled.
-   * - `number`: Maximum number of reissues allowed for the voucher.
-   * This field determines the total number of reissues across all consumers.
-   *
-   * default: "auto"
-   */
-  reissue: 'auto' | number;
-  /**
-   * Specifies the reissue policy per consumer:
-   * - `false`: Reissue is not allowed for individual consumers.
-   * - `'auto'`: Automatic reissue per consumer is enabled.
-   * - `number`: Maximum number of reissues allowed per consumer.
-   * This field determines how many times a single consumer can reissue the voucher.
-   *
-   * default: false
-   */
-  perCustomerReissue: false | 'auto' | number;
-
-  stampsRequiredForReward: number;
-};
-
-export type PolicyId = PropType<Policy, 'id'>;
-
-export type Reward = {
-  id: Uuid;
-  name: string;
-};
-export type RewardId = PropType<Reward, 'id'>;
-
+export type VoucherCreationRequest = Omit<Voucher, 'status'>;
 /**
  * Status of the voucher lifecycle:
  * - `active`: Default state. The voucher becomes active when the first stamp is received.
@@ -68,9 +40,10 @@ export type RewardId = PropType<Reward, 'id'>;
  * - `redeem`: The reward has been claimed.
  */
 const holderState = ['actived', 'completed', 'redeemed'] as const;
+
 export type HolderState = (typeof holderState)[number];
 
-type Holder = {
+export type Holder = {
   id: Uuid;
 
   voucherId: VoucherId;
@@ -84,12 +57,12 @@ type Holder = {
   createdAt: ISODate;
   updatedAt: ISODate;
 };
-export type HolderId = PropType<Holder, 'id'>;
+export type HolderId = string;
 
-type Stamp = {
+export type Stamp = {
   id: Uuid;
   holderId: HolderId;
   posId: PoSId;
   createdAt: ISODate;
 };
-export type StampId = PropType<Stamp, 'id'>;
+export type StampId = string;
