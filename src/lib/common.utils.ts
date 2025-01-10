@@ -53,9 +53,7 @@ export type Snakify<T> =
         }
       : T;
 
-export const toSnakeCase = <T extends Record<string, any>>(
-  obj: T,
-): Snakify<T> => {
+export const toSnakeCase = <T>(obj: T): Snakify<T> => {
   const convertKey = (key: string) =>
     key.replace(/([A-Z])/g, '_$1').toLowerCase();
 
@@ -79,3 +77,36 @@ export const toSnakeCase = <T extends Record<string, any>>(
     {} as Record<string, any>,
   ) as Snakify<T>;
 };
+
+/**
+ * Splits the second number into parts where each part is equal to the first number,
+ * except for the last part, which will be the remainder (if any).
+ *
+ * @param partSize The size of each part.
+ * @param total The total number to split.
+ * @returns An array of parts.
+ */
+export const splitToParts = (partSize: number, total: number): number[] => {
+  if (partSize <= 0) throw new Error('Part size must be greater than 0');
+
+  const fullParts = Math.floor(total / partSize);
+  const remainder = total % partSize;
+
+  return Array(fullParts)
+    .fill(partSize)
+    .concat(remainder > 0 ? [remainder] : []);
+};
+
+/**
+ * Fills parts (e.g., the result of `splitToParts`) with the specified value,
+ * creating a nested array where each part is an array of identical values.
+ *
+ * @param parts An array of numbers, typically the result of `splitToParts`,
+ *              where each number specifies the size of the corresponding nested array.
+ * @param value The value to fill each nested array.
+ * @returns A 2D array where each nested array is filled with the specified value.
+ */
+export const fillPartsWithValue = <T>(
+  parts: number[],
+  fn: (count: number) => T[],
+): T[][] => parts.map((count) => fn(count));

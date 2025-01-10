@@ -16,12 +16,3 @@ export type Policy = {
 };
 
 export type PolicyId = string;
-
-export type PolicyWithAuto = Omit<Policy, 'maxReissue'> & {
-  issueMode: 'auto';
-};
-
-export type PolicyWithCustomAndMaxReissue = Policy & {
-  issueMode: 'custom';
-  maxReissue: number;
-};
