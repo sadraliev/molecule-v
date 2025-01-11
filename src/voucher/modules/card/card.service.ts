@@ -67,17 +67,22 @@ export class CardService {
           as: 'customer',
         },
       },
-
+      {
+        $addFields: {
+          customer: { $arrayElemAt: ['$customer', 0] }, // Extract the first customer
+        },
+      },
       {
         $project: {
+          _id: 0,
           id: '$_id',
           status: 1,
           redeemPosId: 1,
           completedAt: 1,
           redeemAt: 1,
           customer: {
-            phone: 1,
-            name: 1,
+            phone: '$customer.phone',
+            name: '$customer.name',
           },
           stamps: {
             id: '$_id',

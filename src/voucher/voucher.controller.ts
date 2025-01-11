@@ -61,7 +61,12 @@ export class VoucherController {
       });
 
       return {
-        response,
+        resource: 'Card',
+        apiVersion: 'v1',
+        ok: true,
+        payload: {
+          cards: response,
+        },
       };
     } catch (error) {
       this.logger.warn(
