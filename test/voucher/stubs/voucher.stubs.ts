@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { PhoneNumber } from 'src/lib';
 import { CreateVoucherDto } from 'src/voucher/dtos/create-voucher.dto';
+import { IssueModes } from 'src/voucher/types/policy.types';
 
 export const createVoucherDto = (
   fn: (voucher: CreateVoucherDto) => CreateVoucherDto,
@@ -22,7 +23,10 @@ export const createVoucherDto = (
     },
     policy: {
       name: faker.lorem.sentence(),
-      issue_mode: faker.helpers.arrayElement(['auto', 'fixed']),
+      issue_mode: faker.helpers.arrayElement([
+        IssueModes.Limited,
+        IssueModes.Unlimited,
+      ]),
       stamps_required_for_reward: faker.number.int({ min: 3, max: 7 }),
     },
   };
