@@ -51,8 +51,8 @@ VoucherSchema.virtual('policy').get(function () {
 VoucherSchema.set('toObject', {
   virtuals: true,
   transform: (doc, ret) => {
-    ret.policy = ret.policyId; // Добавляем поле policy
-    delete ret.policyId; // Удаляем policyId
+    ret.policy = ret.policyId;
+    delete ret.policyId;
 
     return ret;
   },

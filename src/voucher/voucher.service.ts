@@ -5,17 +5,17 @@ import { CustomerService } from 'src/organization/customer/customer.service';
 import { createStampsDto } from './dtos/create-stamp.dto';
 import { CreateVoucherDto } from './dtos/create-voucher.dto';
 import {
+  createArrayWithValue,
+  fillPartsWithValue,
   getPolicy,
   getReward,
   getVoucher,
+  hasEnoughSlotsForStamps,
   makeVoucher,
+  splitToParts,
 } from './helpers/voucher.calculations';
 import { CardService } from './modules/card/card.service';
-import {
-  createArrayWithValue,
-  hasEnoughSlotsForStamps,
-  StampService,
-} from './modules/stamp/stamp.service';
+import { StampService } from './modules/stamp/stamp.service';
 import {
   InjectPolicy,
   PolicyDocument,
@@ -75,18 +75,18 @@ export class VoucherService {
     stampsToAdd,
     posId,
   }: createStampsDto & { voucherId: VoucherId }) {
-    // received voucher and related data
     const voucher = await this.voucherModel
       .findById(voucherId)
       .populate<{ policy: PolicyDocument }>('policyId')
       .populate<{ reward: RewardDocument }>('rewardId');
 
-    // find the customer and their card
     const customer = await this.customerService.findOrCreate(forCustomer);
-    const card = await this.cardService.findOne(voucher.id, customer.id);
+    const card = await this.cardService.findActive(voucher.id, customer.id);
 
     if (card) {
-      const existingSlots = await this.stampService.getStampsByCardId(card.id);
+      const existingSlots = await this.stampService.getStampsByCardId(
+        card._id.toString(),
+      );
 
       if (
         hasEnoughSlotsForStamps(
@@ -95,12 +95,86 @@ export class VoucherService {
           existingSlots.length,
         )
       ) {
-        await this.stampService.saveStamps(
-          createArrayWithValue({ cardId: card.id, posId }, stampsToAdd),
+        // * add stamps
+        await this.stampService.save(
+          createArrayWithValue(
+            { cardId: card._id.toString(), posId },
+            stampsToAdd,
+          ),
         );
 
-        return await this.cardService.findSlotsByCardId(card.id);
+        //* updating status
+        const cardWithSlots = await this.cardService.findSlotsByCardId([
+          card._id.toString(),
+        ]);
+
+        const cardIds = cardWithSlots
+          .filter(
+            (filledCard) =>
+              filledCard.stamps.length ===
+              voucher.policy.stampsRequiredForReward,
+          )
+          .map((fullcard) => fullcard.id.toString());
+
+        if (cardIds.length) {
+          await this.cardService.updateStatus(cardIds, 'completed');
+        }
+
+        return await this.cardService.findSlotsByCardId([card._id.toString()]);
       }
+
+      //* add stamps into multiply cards
+      const availableSlotsForStamps =
+        voucher.policy.stampsRequiredForReward - existingSlots.length;
+
+      await this.stampService.save(
+        createArrayWithValue(
+          { cardId: card._id.toString(), posId },
+          availableSlotsForStamps,
+        ),
+      );
+
+      this.cardService.updateStatus([card._id.toString()], 'completed');
+
+      stampsToAdd = stampsToAdd - availableSlotsForStamps;
+
+      const parts = fillPartsWithValue(
+        splitToParts(voucher.policy.stampsRequiredForReward, stampsToAdd),
+        (count) => createArrayWithValue({ posId }, count),
+      );
+
+      const cards = await Promise.all(
+        parts.map(async (partialStamps) => {
+          const card = await this.cardService.save(voucher.id, customer.id);
+
+          await this.stampService.save(
+            partialStamps.map((partial) => ({
+              ...partial,
+              cardId: card._id.toString(),
+            })),
+          );
+
+          return card;
+        }),
+      );
+
+      //* update status
+      const cardIds = [...cards, card].map((card) => card._id.toString());
+
+      const cardWithSlots = await this.cardService.findSlotsByCardId(cardIds);
+
+      const completedCards = cardWithSlots
+        .filter(
+          (filledCard) =>
+            filledCard.stamps.length === voucher.policy.stampsRequiredForReward,
+        )
+        .map((fullcard) => fullcard.id);
+
+      if (completedCards.length) {
+        await this.cardService.updateStatus(completedCards, 'completed');
+      }
+
+      return await this.cardService.findSlotsByCardId(cardIds);
     }
 
     /**

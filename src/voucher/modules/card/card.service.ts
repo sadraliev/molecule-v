@@ -1,10 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { CustomerId } from 'src/organization/customer/types/customer.types';
+import {
+  Customer,
+  CustomerId,
+} from 'src/organization/customer/types/customer.types';
 import { VoucherId } from 'src/voucher/types/voucher.types';
 
-import { CardModel, CardDocument, InjectCard } from './card.schema';
-import { CardId } from './card.types';
+import { Stamp } from '../stamp/stamp.types';
+
+import {
+  CardModel,
+  CardDocument,
+  InjectCard,
+  CardDefinition,
+} from './card.schema';
+import { Card, CardId, CardStatus, CardStatuses } from './card.types';
 
 @Injectable()
 export class CardService {
@@ -15,18 +25,24 @@ export class CardService {
     private readonly cardModel: CardModel,
   ) {}
 
-  async findOne(
+  async findActive(
     voucherId: VoucherId,
     customerId: CustomerId,
-  ): Promise<CardDocument> {
-    return this.cardModel.findOne({ voucherId, customerId });
+  ): Promise<CardDefinition & { _id: Types.ObjectId }> {
+    return this.cardModel
+      .findOne({
+        voucherId,
+        customerId,
+        status: CardStatuses.Activated,
+      })
+      .lean();
   }
 
   async countByVoucherId(voucherId: VoucherId): Promise<number> {
     return this.cardModel.countDocuments({ voucherId });
   }
 
-  async createCard(
+  async save(
     voucherId: VoucherId,
     customerId: CustomerId,
   ): Promise<CardDocument> {
@@ -36,11 +52,29 @@ export class CardService {
 
     return newCard;
   }
-  async findSlotsByCardId(cardId: CardId) {
-    return this.cardModel.aggregate([
+  async updateStatus(cardIds: CardId[], status: CardStatus): Promise<void> {
+    const objectIds = cardIds.map((id) => new Types.ObjectId(id));
+
+    await this.cardModel.updateMany(
+      { _id: { $in: objectIds } },
+      { $set: { status } },
+    );
+  }
+  async findSlotsByCardId(cardIds: CardId[]) {
+    const objectIds = cardIds.map((id) => new Types.ObjectId(id));
+
+    return await this.cardModel.aggregate<
+      Card & {
+        id: string;
+        stamps: Stamp[] & { id: string };
+        customer: Omit<Customer, 'status'>;
+      }
+    >([
       {
         $match: {
-          _id: new Types.ObjectId(cardId),
+          _id: {
+            $in: objectIds,
+          },
         },
       },
       {

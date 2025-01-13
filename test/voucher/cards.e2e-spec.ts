@@ -68,7 +68,7 @@ describe('Card tests', () => {
     await connection.close();
   });
 
-  it('As a customer, I want to receive stamps into an existing card [unlimited mode]', async () => {
+  it('Verify single stamp addition updates a single card correctly in unlimited mode', async () => {
     const withUnlimitedMode = createVoucherDto((voucher) => ({
       ...voucher,
       policy: {
@@ -143,11 +143,119 @@ describe('Card tests', () => {
     });
   });
 
-  it('As a customer, I want to receive first stamp into a new loyalty card [unlimited mode]', async () => {
+  it('Ensure a customer can add stamps to an existing card in unlimited mode, completing the reward threshold', async () => {
+    const STAMPS_REQUIRED_FOR_REWARD = 6;
+    const STAMPS_TO_ADD = 6;
+    const USER_ID = 'John-Wick';
+
     const withUnlimitedMode = createVoucherDto((voucher) => ({
       ...voucher,
       policy: {
         ...voucher.policy,
+        stamps_required_for_reward: STAMPS_REQUIRED_FOR_REWARD,
+        issue_mode: IssueModes.Unlimited,
+      },
+    }));
+
+    const {
+      body: {
+        payload: { id },
+      },
+    } = await request(app.getHttpServer())
+      .post('/vouchers')
+      .set('Authorization', `Bearer ${USER_ID}`)
+      .send(withUnlimitedMode)
+      .expect(201);
+
+    const pos = await new posModel(makeMockPoS((pos) => pos)).save();
+
+    const customerPhone = makeMockPhone((phone) => phone);
+    const customer = await new customerModel({
+      name: 'Jonh Wick',
+      phone: customerPhone,
+    }).save();
+
+    const voucher = await voucherModel.findById(id).lean();
+
+    const addOneStamp = createStampsDto((mockDto) => ({
+      ...mockDto,
+      forCustomer: customerPhone,
+      stampsToAdd: STAMPS_TO_ADD,
+      posId: pos.id,
+    }));
+
+    await new cardModel({
+      customerId: customer.id,
+      voucherId: id,
+    }).save();
+
+    const PATH_TO_ADD_STAMPS = '/vouchers/' + voucher._id + '/cards/stamps';
+
+    const response = await request(app.getHttpServer())
+      .post(PATH_TO_ADD_STAMPS)
+      .set('Authorization', `Bearer ${USER_ID}`)
+      .send(addVoucherV1(addOneStamp));
+
+    expect(response.body).toEqual({
+      ok: true,
+      resource: 'Card',
+      apiVersion: 'v1',
+      payload: {
+        cards: [
+          {
+            id: expect.any(String),
+            status: CardStatuses.Completed,
+            customer: {
+              name: customer.name,
+              phone: customer.phone,
+            },
+            stamps: [
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it('Ensure stamps are correctly distributed across cards in unlimited mode when adding more stamps than available slots', async () => {
+    const stamps_required_for_reward = 6;
+    const stampsToAdd = 14;
+
+    const withUnlimitedMode = createVoucherDto((voucher) => ({
+      ...voucher,
+      policy: {
+        ...voucher.policy,
+        stamps_required_for_reward,
         issue_mode: IssueModes.Unlimited,
       },
     }));
@@ -176,9 +284,14 @@ describe('Card tests', () => {
     const addOneStamp = createStampsDto((mockDto) => ({
       ...mockDto,
       forCustomer: customerPhone,
-      stampsToAdd: 1,
+      stampsToAdd,
       posId: pos.id,
     }));
+
+    await new cardModel({
+      customerId: customer.id,
+      voucherId: id,
+    }).save();
 
     const PATH_TO_ADD_STAMPS = '/vouchers/' + voucher._id + '/cards/stamps';
 
@@ -195,6 +308,86 @@ describe('Card tests', () => {
         cards: [
           {
             id: expect.any(String),
+            status: CardStatuses.Completed,
+            customer: {
+              name: customer.name,
+              phone: customer.phone,
+            },
+            stamps: [
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+            ],
+          },
+          {
+            id: expect.any(String),
+            status: CardStatuses.Completed,
+            customer: {
+              name: customer.name,
+              phone: customer.phone,
+            },
+            stamps: [
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+            ],
+          },
+          {
+            id: expect.any(String),
             status: CardStatuses.Activated,
             customer: {
               name: customer.name,
@@ -206,10 +399,16 @@ describe('Card tests', () => {
                 posId: pos.id,
                 action: StampActions.AddStamp,
               },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
             ],
           },
         ],
       },
     });
   });
+  it('As a customer, I want to add a first stamp into a new loyalty card in [unlimited mode]', async () => {});
 });
