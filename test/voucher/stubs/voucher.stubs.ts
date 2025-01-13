@@ -1,7 +1,9 @@
 import { faker } from '@faker-js/faker';
+import { PhoneNumber } from 'src/lib';
 import { CreateVoucherDto } from 'src/voucher/dtos/create-voucher.dto';
+import { IssueModes } from 'src/voucher/types/policy.types';
 
-export const createVoucher = (
+export const createVoucherDto = (
   fn: (voucher: CreateVoucherDto) => CreateVoucherDto,
 ): CreateVoucherDto => {
   const issue_at = faker.date.future().toISOString();
@@ -21,7 +23,10 @@ export const createVoucher = (
     },
     policy: {
       name: faker.lorem.sentence(),
-      issue_mode: faker.helpers.arrayElement(['auto', 'fixed']),
+      issue_mode: faker.helpers.arrayElement([
+        IssueModes.Limited,
+        IssueModes.Unlimited,
+      ]),
       stamps_required_for_reward: faker.number.int({ min: 3, max: 7 }),
     },
   };
@@ -29,6 +34,53 @@ export const createVoucher = (
   return fn(voucher);
 };
 
-// export const withFixedMode = <T extends (...args: any[]) => any>(
-//   fn: T,
-// ): T => {};
+export const makeMockPhone = <T>(fn: (phone: PhoneNumber) => T) => {
+  const number = faker.phone.number({ style: 'international' });
+
+  return fn(number);
+};
+
+export const createStampsDto = <T>(
+  fn: (mockDto: { forCustomer: string; stampsToAdd: number }) => T,
+): T => {
+  const mockDto = {
+    forCustomer: makeMockPhone((phone) => phone),
+    stampsToAdd: faker.number.int({ min: 10, max: 100 }),
+  };
+
+  return fn(mockDto);
+};
+
+export const makeMockPoS = <T>(fn: (mockPoS: Record<string, any>) => T): T => {
+  const mockPoS = {
+    name: faker.lorem.word(),
+    address: faker.location.streetAddress({ useFullAddress: true }),
+  };
+
+  return fn(mockPoS);
+};
+
+export const addVoucherV1 = <
+  T,
+  R extends T & { apiVersion: string; resource: 'Voucher' },
+>(
+  data: T,
+): R => {
+  return {
+    resource: 'Voucher',
+    apiVersion: 'v1',
+    ...data,
+  } as R;
+};
+
+export const withVoucherV1 = <T, R>(
+  callback: (arg: T) => R,
+): ((arg: T) => R) => {
+  return function (x: T): R {
+    return {
+      resource: 'Voucher',
+      apiVersion: 'v1',
+      ...callback(x),
+    };
+  };
+};

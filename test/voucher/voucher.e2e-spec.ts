@@ -15,11 +15,12 @@ import {
   VoucherModel,
   VOUCHER_COLLECTION_NAME,
 } from 'src/voucher/schemas/voucher.schema';
+import { IssueModes } from 'src/voucher/types/policy.types';
 import * as request from 'supertest';
 
-import { createVoucher } from './stubs/voucher.stubs';
+import { createVoucherDto } from './stubs/voucher.stubs';
 
-describe('Voucher controller (e2e)', () => {
+describe('Voucher', () => {
   let app: INestApplication;
   let voucherModel: VoucherModel;
   let policyModel: PolicyModel;
@@ -54,12 +55,12 @@ describe('Voucher controller (e2e)', () => {
     await connection.close();
   });
 
-  it('Create a new voucher issued automatically.', async () => {
-    const withAuthMode = createVoucher((voucher) => ({
+  it('As a Owner, I want to issue a new voucher with auto mode', async () => {
+    const withUnlimitedMode = createVoucherDto((voucher) => ({
       ...voucher,
       policy: {
         ...voucher.policy,
-        issue_mode: 'auto',
+        issue_mode: IssueModes.Unlimited,
       },
     }));
     const userIdFromJwtToken = 'Jonh-Wick';
@@ -67,7 +68,7 @@ describe('Voucher controller (e2e)', () => {
     const response = await request(app.getHttpServer())
       .post('/vouchers')
       .set('Authorization', `Bearer ${userIdFromJwtToken}`)
-      .send(withAuthMode)
+      .send(withUnlimitedMode)
       .expect(201);
 
     expect(response.body).toEqual({
@@ -84,7 +85,7 @@ describe('Voucher controller (e2e)', () => {
     const reward = await rewardModel.findById(voucher.rewardId).lean();
 
     expect({
-      ...withAuthMode,
+      ...withUnlimitedMode,
       issued_by: userIdFromJwtToken,
     }).toEqual(
       expect.objectContaining({
@@ -107,12 +108,12 @@ describe('Voucher controller (e2e)', () => {
     );
   });
 
-  it('Create a new voucher with fixed mode', async () => {
-    const withFixedMode = createVoucher((voucher) => ({
+  it('As a Owner, I want to issue a new voucher with fixed mode', async () => {
+    const withLimitedMode = createVoucherDto((voucher) => ({
       ...voucher,
       policy: {
         ...voucher.policy,
-        issue_mode: 'fixed',
+        issue_mode: IssueModes.Limited,
         max_reissue: 10,
       },
     }));
@@ -121,7 +122,7 @@ describe('Voucher controller (e2e)', () => {
     const response = await request(app.getHttpServer())
       .post('/vouchers')
       .set('Authorization', `Bearer ${userIdFromJwtToken}`)
-      .send(withFixedMode)
+      .send(withLimitedMode)
       .expect(201);
 
     expect(response.body).toEqual({
@@ -138,7 +139,7 @@ describe('Voucher controller (e2e)', () => {
     const reward = await rewardModel.findById(voucher.rewardId).lean();
 
     expect({
-      ...withFixedMode,
+      ...withLimitedMode,
       issued_by: userIdFromJwtToken,
     }).toEqual(
       expect.objectContaining({

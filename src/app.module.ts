@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { mongooseConfig, rootConfig } from './config';
+import { OrganizationModule } from './organization/organization.module';
 import { VoucherModule } from './voucher/voucher.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { VoucherModule } from './voucher/voucher.module';
     ConfigModule.forRoot(rootConfig()),
     MongooseModule.forRootAsync(mongooseConfig()),
     VoucherModule,
+    OrganizationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

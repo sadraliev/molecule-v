@@ -1,4 +1,4 @@
-import { CustomerId, ISODate, PoSId, UserId, Uuid } from 'src/lib';
+import { ISODate, UserId } from 'src/lib';
 
 import { PolicyId } from './policy.types';
 import { RewardId } from './reward.types';
@@ -33,36 +33,3 @@ export type Voucher = {
 export type VoucherId = string;
 
 export type VoucherCreationRequest = Omit<Voucher, 'status'>;
-/**
- * Status of the voucher lifecycle:
- * - `active`: Default state. The voucher becomes active when the first stamp is received.
- * - `completed`: All required stamps have been collected, but the reward has not been claimed yet.
- * - `redeem`: The reward has been claimed.
- */
-const holderState = ['actived', 'completed', 'redeemed'] as const;
-
-export type HolderState = (typeof holderState)[number];
-
-export type Holder = {
-  id: Uuid;
-
-  voucherId: VoucherId;
-  holderId: CustomerId;
-
-  status: HolderState;
-  redeemPosId?: PoSId;
-  completedAt?: ISODate;
-  redeemAt?: ISODate;
-
-  createdAt: ISODate;
-  updatedAt: ISODate;
-};
-export type HolderId = string;
-
-export type Stamp = {
-  id: Uuid;
-  holderId: HolderId;
-  posId: PoSId;
-  createdAt: ISODate;
-};
-export type StampId = string;
