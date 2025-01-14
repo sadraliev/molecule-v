@@ -14,6 +14,7 @@ import {
   makeVoucher,
   splitToParts,
 } from './helpers/voucher.calculations';
+import { distributor } from './libs/distibutor';
 import { CardService } from './modules/card/card.service';
 import { StampService } from './modules/stamp/stamp.service';
 import {
@@ -123,6 +124,14 @@ export class VoucherService {
         return await this.cardService.findSlotsByCardId([card._id.toString()]);
       }
 
+      return distributor(
+        voucher,
+        {
+          ...card,
+          stamps: existingSlots,
+        },
+        stampsToAdd,
+      );
       //* add stamps into multiply cards
       const availableSlotsForStamps =
         voucher.policy.stampsRequiredForReward - existingSlots.length;

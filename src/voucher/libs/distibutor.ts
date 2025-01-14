@@ -1,6 +1,9 @@
 import { clone } from 'ramda';
 
-import { createArrayWithValue } from '../helpers/voucher.calculations';
+import {
+  createArrayWithValue,
+  splitToParts,
+} from '../helpers/voucher.calculations';
 import { IssueMode } from '../types/policy.types';
 
 type Voucher = {
@@ -12,24 +15,21 @@ type Voucher = {
 
 type Card = {
   stamps: any[];
-  template?: any;
 };
 
-type Return<
-  V extends Voucher = Voucher,
-  C extends Card = Card,
-  T extends object = object,
-> = V & {
-  cards: (C & {
-    preforms: T[];
-  })[];
+type CardUnion<C extends Card = Card, T extends object = object> = Array<
+  (C & { isNew: false; stamps: T[] }) | { isNew: true; stamps: T[] }
+>;
+
+type Return<V extends Voucher = Voucher> = V & {
+  cards: CardUnion;
 };
 
 export const distributor = <V extends Voucher, C extends Card>(
   rule: V,
   card: C,
   stampsToAdd: number,
-): Return<V, C> => {
+): Return<V> => {
   const voucherClone = clone(rule);
   const cardClone = clone(card);
 
@@ -37,7 +37,7 @@ export const distributor = <V extends Voucher, C extends Card>(
   const slotLimitPerCard = voucherClone.policy.stampsRequiredForReward;
   const filledSlots = cardClone.stamps.length;
 
-  const template = card.template ?? {};
+  const template = {};
 
   const _isLimitedMode = () => mode === 'limited';
   const isUnlimitedMode = () => mode === 'unlimited';
@@ -49,20 +49,46 @@ export const distributor = <V extends Voucher, C extends Card>(
     const canFitAllStamps = stampsToAdd <= availableSlotsOnCard;
 
     if (canFitAllStamps) {
-      const preforms = {
+      const voucher = {
         ...voucherClone,
         cards: [
           {
-            ...card,
-            preforms: createArrayWithValue(template, stampsToAdd),
+            ...cardClone,
+            isNew: false,
+            stamps: createArrayWithValue(template, stampsToAdd),
           },
         ],
       };
 
-      return preforms;
+      return voucher;
     }
 
     if (isUnlimitedMode()) {
+      const availableSlotsOnCard = slotLimitPerCard - filledSlots;
+      const remainingStampsToAdd = stampsToAdd - availableSlotsOnCard;
+
+      const voucher = {
+        ...voucherClone,
+        cards: [
+          {
+            ...cardClone,
+            isNew: false,
+            stamps: createArrayWithValue(template, stampsToAdd),
+          },
+        ] as CardUnion,
+      };
+
+      const parts = splitToParts(slotLimitPerCard, remainingStampsToAdd);
+      const cards = parts.map((count) => {
+        return {
+          isNew: true,
+          stamps: createArrayWithValue(template, count),
+        };
+      });
+
+      voucher.cards.push(...cards);
+
+      return voucher;
     }
   }
 };
