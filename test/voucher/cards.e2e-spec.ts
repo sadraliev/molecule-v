@@ -671,4 +671,177 @@ describe('Card tests', () => {
       },
     });
   });
+
+  it('Ensure stamps are correctly distributed across cards in limited mode when adding more stamps than available slots (with pre-existing stamps)', async () => {
+    const stamps_required_for_reward = 6;
+    const stampsToAdd = 14;
+
+    const withUnlimitedMode = createVoucherDto((voucher) => ({
+      ...voucher,
+      policy: {
+        ...voucher.policy,
+        stamps_required_for_reward,
+        issue_mode: IssueModes.Unlimited,
+        max_reissue: 2,
+      },
+    }));
+    const userIdFromJwtToken = 'Jonh-Wick';
+
+    const {
+      body: {
+        payload: { id },
+      },
+    } = await request(app.getHttpServer())
+      .post('/vouchers')
+      .set('Authorization', `Bearer ${userIdFromJwtToken}`)
+      .send(withUnlimitedMode)
+      .expect(201);
+
+    const pos = await new posModel(makeMockPoS((pos) => pos)).save();
+
+    const customerPhone = makeMockPhone((phone) => phone);
+    const customer = await new customerModel({
+      name: 'Jonh Wick',
+      phone: customerPhone,
+    }).save();
+
+    const voucher = await voucherModel.findById(id).lean();
+
+    const addOneStamp = createStampsDto((mockDto) => ({
+      ...mockDto,
+      forCustomer: customerPhone,
+      stampsToAdd,
+      posId: pos.id,
+    }));
+
+    const card = await new cardModel({
+      customerId: customer.id,
+      voucherId: id,
+    }).save();
+
+    await new stampModel({ cardId: card.id, posId: pos.id }).save();
+
+    const PATH_TO_ADD_STAMPS = '/vouchers/' + voucher._id + '/cards/stamps';
+
+    const response = await request(app.getHttpServer())
+      .post(PATH_TO_ADD_STAMPS)
+      .set('Authorization', `Bearer ${userIdFromJwtToken}`)
+      .send(addVoucherV1(addOneStamp));
+
+    expect(response.body).toEqual({
+      ok: true,
+      resource: 'Card',
+      apiVersion: 'v1',
+      payload: {
+        cards: [
+          {
+            id: expect.any(String),
+            status: CardStatuses.Completed,
+            customer: {
+              name: customer.name,
+              phone: customer.phone,
+            },
+            stamps: [
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+            ],
+          },
+          {
+            id: expect.any(String),
+            status: CardStatuses.Completed,
+            customer: {
+              name: customer.name,
+              phone: customer.phone,
+            },
+            stamps: [
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+            ],
+          },
+          {
+            id: expect.any(String),
+            status: CardStatuses.Activated,
+            customer: {
+              name: customer.name,
+              phone: customer.phone,
+            },
+            stamps: [
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+              {
+                id: expect.any(String),
+                posId: pos.id,
+                action: StampActions.AddStamp,
+              },
+            ],
+          },
+        ],
+        leftoverStamps: 2,
+      },
+    });
+  });
 });
