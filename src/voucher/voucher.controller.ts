@@ -6,8 +6,10 @@ import {
   UnauthorizedException,
   Logger,
   HttpException,
+  Param,
 } from '@nestjs/common';
 
+import { createStampsDto } from './dtos/create-stamp.dto';
 import {
   CreateVoucherDto,
   CreateVoucherResponseDto,
@@ -42,6 +44,34 @@ export class VoucherController {
       };
     } catch (error) {
       this.logger.warn(error);
+
+      throw new HttpException(error.status, error.message);
+    }
+  }
+
+  @Post('/:voucherId/cards/stamps')
+  async createStampsToCard(
+    @Body() body: createStampsDto,
+    @Param('voucherId') voucherId: string,
+  ) {
+    try {
+      const payload = await this.voucherService.addStampsToCard({
+        ...body,
+        voucherId,
+      });
+
+      return {
+        resource: 'Card',
+        apiVersion: 'v1',
+        ok: true,
+        payload,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `An error occured during add stamps`,
+        error,
+        error.stack,
+      );
 
       throw new HttpException(error.status, error.message);
     }

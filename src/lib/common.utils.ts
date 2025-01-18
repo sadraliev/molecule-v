@@ -53,9 +53,7 @@ export type Snakify<T> =
         }
       : T;
 
-export const toSnakeCase = <T extends Record<string, any>>(
-  obj: T,
-): Snakify<T> => {
+export const toSnakeCase = <T>(obj: T): Snakify<T> => {
   const convertKey = (key: string) =>
     key.replace(/([A-Z])/g, '_$1').toLowerCase();
 
