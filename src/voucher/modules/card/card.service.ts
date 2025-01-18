@@ -38,6 +38,13 @@ export class CardService {
       .lean();
   }
 
+  async getExistingCardsCount(
+    voucherId: VoucherId,
+    customerId: CustomerId,
+  ): Promise<number> {
+    return this.cardModel.countDocuments({ voucherId, customerId });
+  }
+
   async countByVoucherId(voucherId: VoucherId): Promise<number> {
     return this.cardModel.countDocuments({ voucherId });
   }

@@ -73,6 +73,7 @@ describe('Card tests', () => {
       ...voucher,
       policy: {
         ...voucher.policy,
+        stamps_required_for_reward: 6,
         issue_mode: IssueModes.Unlimited,
       },
     }));
@@ -292,6 +293,8 @@ describe('Card tests', () => {
       customerId: customer.id,
       voucherId: id,
     }).save();
+
+    // await new stampsM
 
     const PATH_TO_ADD_STAMPS = '/vouchers/' + voucher._id + '/cards/stamps';
 

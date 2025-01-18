@@ -1,21 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { partition } from 'ramda';
 import { UserId } from 'src/lib';
 import { CustomerService } from 'src/organization/customer/customer.service';
 
 import { createStampsDto } from './dtos/create-stamp.dto';
 import { CreateVoucherDto } from './dtos/create-voucher.dto';
 import {
-  createArrayWithValue,
-  fillPartsWithValue,
   getPolicy,
   getReward,
   getVoucher,
-  hasEnoughSlotsForStamps,
   makeVoucher,
-  splitToParts,
 } from './helpers/voucher.calculations';
-import { distributor } from './libs/distibutor';
+import { stampsDistributor } from './libs/distibutor';
 import { CardService } from './modules/card/card.service';
+import { CardStatuses } from './modules/card/card.types';
 import { StampService } from './modules/stamp/stamp.service';
 import {
   InjectPolicy,
@@ -84,93 +82,52 @@ export class VoucherService {
     const customer = await this.customerService.findOrCreate(forCustomer);
     const card = await this.cardService.findActive(voucher.id, customer.id);
 
+    const existingSlots = await this.stampService.getStampsByCardId(
+      card._id.toString(),
+    );
+
+    if (!existingSlots.length) {
+      this.logger.warn('Detected the card without slots');
+    }
+
     if (card) {
-      const existingSlots = await this.stampService.getStampsByCardId(
-        card._id.toString(),
+      const stamps = stampsDistributor({
+        maxSlotsPerCard: voucher.policy.stampsRequiredForReward,
+        occupiedSlots: existingSlots.length,
+        stampsToAdd,
+      });
+
+      const [stampsForExistingCard, stampsForNewCards] = partition(
+        (card) => card.isNew === false,
+        stamps.cards,
       );
 
-      if (
-        hasEnoughSlotsForStamps(
-          stampsToAdd,
-          voucher.policy.stampsRequiredForReward,
-          existingSlots.length,
-        )
-      ) {
-        // * add stamps
-        await this.stampService.save(
-          createArrayWithValue(
-            { cardId: card._id.toString(), posId },
-            stampsToAdd,
+      const cardIdsToUpdateStatus = [card._id.toString()];
+      const newStampsForInserting = [];
+
+      if (stampsForExistingCard.length) {
+        stampsForExistingCard.forEach(({ stamps }) =>
+          stamps.forEach(() =>
+            newStampsForInserting.push({ cardId: card._id.toString(), posId }),
           ),
         );
-
-        //* updating status
-        const cardWithSlots = await this.cardService.findSlotsByCardId([
-          card._id.toString(),
-        ]);
-
-        const cardIds = cardWithSlots
-          .filter(
-            (filledCard) =>
-              filledCard.stamps.length ===
-              voucher.policy.stampsRequiredForReward,
-          )
-          .map((fullcard) => fullcard.id.toString());
-
-        if (cardIds.length) {
-          await this.cardService.updateStatus(cardIds, 'completed');
-        }
-
-        return await this.cardService.findSlotsByCardId([card._id.toString()]);
       }
 
-      return distributor(
-        voucher,
-        {
-          ...card,
-          stamps: existingSlots,
-        },
-        stampsToAdd,
-      );
-      //* add stamps into multiply cards
-      const availableSlotsForStamps =
-        voucher.policy.stampsRequiredForReward - existingSlots.length;
+      if (voucher.policy.issueMode === 'unlimited') {
+        for (const card of stampsForNewCards) {
+          const newCard = await this.cardService.save(voucher.id, customer.id);
 
-      await this.stampService.save(
-        createArrayWithValue(
-          { cardId: card._id.toString(), posId },
-          availableSlotsForStamps,
-        ),
-      );
-
-      this.cardService.updateStatus([card._id.toString()], 'completed');
-
-      stampsToAdd = stampsToAdd - availableSlotsForStamps;
-
-      const parts = fillPartsWithValue(
-        splitToParts(voucher.policy.stampsRequiredForReward, stampsToAdd),
-        (count) => createArrayWithValue({ posId }, count),
-      );
-
-      const cards = await Promise.all(
-        parts.map(async (partialStamps) => {
-          const card = await this.cardService.save(voucher.id, customer.id);
-
-          await this.stampService.save(
-            partialStamps.map((partial) => ({
-              ...partial,
-              cardId: card._id.toString(),
-            })),
+          card.stamps.forEach(() =>
+            newStampsForInserting.push({ cardId: newCard.id, posId }),
           );
+          cardIdsToUpdateStatus.push(newCard._id.toString());
+        }
+      }
+      await this.stampService.save(newStampsForInserting);
 
-          return card;
-        }),
+      const cardWithSlots = await this.cardService.findSlotsByCardId(
+        cardIdsToUpdateStatus,
       );
-
-      //* update status
-      const cardIds = [...cards, card].map((card) => card._id.toString());
-
-      const cardWithSlots = await this.cardService.findSlotsByCardId(cardIds);
 
       const completedCards = cardWithSlots
         .filter(
@@ -180,25 +137,28 @@ export class VoucherService {
         .map((fullcard) => fullcard.id);
 
       if (completedCards.length) {
-        await this.cardService.updateStatus(completedCards, 'completed');
+        await this.cardService.updateStatus(
+          completedCards,
+          CardStatuses.Completed,
+        );
       }
+      const response = await this.cardService.findSlotsByCardId(
+        cardIdsToUpdateStatus,
+      );
 
-      return await this.cardService.findSlotsByCardId(cardIds);
+      return response;
+
+      if (voucher.policy.issueMode === 'limited') {
+        const currentCardQuantity =
+          await this.cardService.getExistingCardsCount(voucher.id, customer.id);
+
+        const canFitAllStamps = voucher.policy.maxReissue - currentCardQuantity;
+
+        if (!canFitAllStamps) {
+          throw new Error('not enought slots for stamps');
+        }
+      }
     }
-
-    /**
-     * TODO: Add new stamps
-     * * Does the customer already have a stamp card?
-     * *  If yes, check if there are available slots for new stamps.
-     * *    If yes, add the new stamps.
-     * *    If no, check if it is possible to issue new cards -
-     * *      the check is performed with the following logic: if policy.issueMode === 'auto', return true;
-     * *      if policy.issueMode === 'fixed', check if there are free cards for stamps; if yes, return true, otherwise return false.
-     * *  If no, check if it is possible to issue new cards -
-     * *      the check is performed with the following logic: if policy.issueMode === 'auto', return true;
-     * *      if policy.issueMode === 'fixed', check if there are free cards for stamps; if yes, return true, otherwise return false.
-     *
-     */
 
     return false;
   }

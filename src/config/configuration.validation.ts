@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { TypeOf, z } from 'zod';
 
 const environment = z.enum(['local', 'development', 'test', 'production']);
@@ -35,10 +36,11 @@ declare global {
 }
 
 export const validate = (config: Record<string, unknown>) => {
+  const logger = new Logger('environment validator');
   const validation = envSchema.safeParse(config);
 
   if (!validation.success) {
-    console.error(
+    logger.error(
       'Environment variable validation error:',
       validation.error.format(),
     );

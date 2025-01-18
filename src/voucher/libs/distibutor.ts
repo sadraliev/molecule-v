@@ -1,94 +1,76 @@
-import { clone } from 'ramda';
-
 import {
   createArrayWithValue,
   splitToParts,
 } from '../helpers/voucher.calculations';
-import { IssueMode } from '../types/policy.types';
 
-type Voucher = {
-  policy: {
-    issueMode: IssueMode;
-    stampsRequiredForReward: number;
+type TDistributorArgs = {
+  maxSlotsPerCard: number;
+  stampsToAdd: number;
+  occupiedSlots: number;
+};
+type TDistributedResult = {
+  cards: Array<{
+    isNew: boolean;
+    stamps: Array<void>;
+  }>;
+};
+
+/**
+ * Distributes stamps across cards, filling an existing card if slots are available,
+ * and creating new cards as needed for the remaining stamps.
+ *
+ * @template T - The input type extending TDistributorArgs.
+ * @param {T} params - Parameters for stamp distribution.
+ * @param {number} params.maxSlotsPerCard - The maximum number of slots available on one card.
+ * @param {number} params.stampsToAdd - Total number of stamps to distribute.
+ * @param {number} [params.occupiedSlots=0] - The number of already occupied slots on the current card.
+ * @returns {{
+ *   cards: Array<{
+ *     isNew: boolean;
+ *     stamps: Array<void>;
+ *   }>
+ * }} - An object containing an array of cards with stamp distribution details.
+ */
+export const stampsDistributor = <
+  T extends TDistributorArgs = TDistributorArgs,
+>({
+  maxSlotsPerCard,
+  stampsToAdd,
+  occupiedSlots = 0,
+}: T): TDistributedResult => {
+  const blank = {
+    cards: [],
   };
-};
 
-type Card = {
-  stamps: any[];
-};
+  const availableSlotsOnCard = Math.max(0, maxSlotsPerCard - occupiedSlots);
 
-type CardUnion<C extends Card = Card, T extends object = object> = Array<
-  (C & { isNew: false; stamps: T[] }) | { isNew: true; stamps: T[] }
->;
+  const canFitNewStampsOnCurrentCard = stampsToAdd <= availableSlotsOnCard;
 
-type Return<V extends Voucher = Voucher> = V & {
-  cards: CardUnion;
-};
+  if (canFitNewStampsOnCurrentCard) {
+    blank.cards.push({
+      isNew: false,
+      stamps: createArrayWithValue(null, stampsToAdd),
+    });
 
-export const distributor = <V extends Voucher, C extends Card>(
-  rule: V,
-  card: C,
-  stampsToAdd: number,
-): Return<V> => {
-  const voucherClone = clone(rule);
-  const cardClone = clone(card);
-
-  const mode = voucherClone.policy.issueMode;
-  const slotLimitPerCard = voucherClone.policy.stampsRequiredForReward;
-  const filledSlots = cardClone.stamps.length;
-
-  const template = {};
-
-  const _isLimitedMode = () => mode === 'limited';
-  const isUnlimitedMode = () => mode === 'unlimited';
-
-  if (cardClone) {
-    const availableSlotsOnCard = slotLimitPerCard - filledSlots;
-    // isCardSlotSufficient
-    // canFitAllStamps
-    const canFitAllStamps = stampsToAdd <= availableSlotsOnCard;
-
-    if (canFitAllStamps) {
-      const voucher = {
-        ...voucherClone,
-        cards: [
-          {
-            ...cardClone,
-            isNew: false,
-            stamps: createArrayWithValue(template, stampsToAdd),
-          },
-        ],
-      };
-
-      return voucher;
-    }
-
-    if (isUnlimitedMode()) {
-      const availableSlotsOnCard = slotLimitPerCard - filledSlots;
-      const remainingStampsToAdd = stampsToAdd - availableSlotsOnCard;
-
-      const voucher = {
-        ...voucherClone,
-        cards: [
-          {
-            ...cardClone,
-            isNew: false,
-            stamps: createArrayWithValue(template, stampsToAdd),
-          },
-        ] as CardUnion,
-      };
-
-      const parts = splitToParts(slotLimitPerCard, remainingStampsToAdd);
-      const cards = parts.map((count) => {
-        return {
-          isNew: true,
-          stamps: createArrayWithValue(template, count),
-        };
-      });
-
-      voucher.cards.push(...cards);
-
-      return voucher;
-    }
+    return blank;
   }
+
+  blank.cards.push({
+    isNew: false,
+    stamps: createArrayWithValue(null, availableSlotsOnCard),
+  });
+
+  const remainingStampsToAdd = Math.max(0, stampsToAdd - availableSlotsOnCard);
+
+  const parts = splitToParts(maxSlotsPerCard, remainingStampsToAdd);
+  const cards = parts.map((count) => {
+    return {
+      isNew: true,
+      stamps: createArrayWithValue({}, count),
+    };
+  });
+
+  blank.cards.push(...cards);
+
+  return blank;
 };
