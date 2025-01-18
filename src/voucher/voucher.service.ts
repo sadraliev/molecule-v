@@ -82,6 +82,11 @@ export class VoucherService {
     const customer = await this.customerService.findOrCreate(forCustomer);
     const card = await this.cardService.findActive(voucher.id, customer.id);
 
+    const cardIdsToUpdateStatus = [card._id.toString()];
+    const newStampsForInserting = [];
+    const isLimitedMode = () => voucher.policy.issueMode === 'limited';
+    const isUnliminedMode = () => voucher.policy.issueMode === 'unlimited';
+
     const existingSlots = await this.stampService.getStampsByCardId(
       card._id.toString(),
     );
@@ -102,9 +107,6 @@ export class VoucherService {
         stamps.cards,
       );
 
-      const cardIdsToUpdateStatus = [card._id.toString()];
-      const newStampsForInserting = [];
-
       if (stampsForExistingCard.length) {
         stampsForExistingCard.forEach(({ stamps }) =>
           stamps.forEach(() =>
@@ -113,7 +115,7 @@ export class VoucherService {
         );
       }
 
-      if (voucher.policy.issueMode === 'unlimited') {
+      if (isUnliminedMode()) {
         for (const card of stampsForNewCards) {
           const newCard = await this.cardService.save(voucher.id, customer.id);
 
@@ -148,7 +150,7 @@ export class VoucherService {
 
       return response;
 
-      if (voucher.policy.issueMode === 'limited') {
+      if (isLimitedMode()) {
         const currentCardQuantity =
           await this.cardService.getExistingCardsCount(voucher.id, customer.id);
 
