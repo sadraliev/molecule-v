@@ -74,6 +74,10 @@ export class VoucherService {
     stampsToAdd,
     posId,
   }: createStampsDto & { voucherId: VoucherId }) {
+    const payload = {
+      cards: [],
+      leftoverStamps: 0,
+    };
     const voucher = await this.voucherModel
       .findById(voucherId)
       .populate<{ policy: PolicyDocument }>('policyId')
@@ -125,6 +129,56 @@ export class VoucherService {
           cardIdsToUpdateStatus.push(newCard._id.toString());
         }
       }
+
+      if (isLimitedMode()) {
+        const currentCardQuantity =
+          await this.cardService.getExistingCardsCount(voucher.id, customer.id);
+
+        const availableCardsForNewStamps = Math.max(
+          0,
+          voucher.policy.maxReissue - currentCardQuantity,
+        );
+
+        const canFitAllStamps =
+          stampsForNewCards.length <= availableCardsForNewStamps;
+
+        if (canFitAllStamps) {
+          for (const card of stampsForNewCards) {
+            const newCard = await this.cardService.save(
+              voucher.id,
+              customer.id,
+            );
+
+            card.stamps.forEach(() =>
+              newStampsForInserting.push({ cardId: newCard.id, posId }),
+            );
+            cardIdsToUpdateStatus.push(newCard._id.toString());
+          }
+        }
+        const availableStampsForNewCards = stampsForNewCards.slice(
+          0,
+          availableCardsForNewStamps,
+        );
+
+        const remainingStamps = stampsForNewCards.slice(
+          availableCardsForNewStamps,
+        );
+
+        for (const card of availableStampsForNewCards) {
+          const newCard = await this.cardService.save(voucher.id, customer.id);
+
+          card.stamps.forEach(() =>
+            newStampsForInserting.push({ cardId: newCard.id, posId }),
+          );
+          cardIdsToUpdateStatus.push(newCard._id.toString());
+        }
+
+        payload.leftoverStamps = remainingStamps.reduce(
+          (acc, cur) => acc + cur.stamps.length,
+          0,
+        );
+      }
+
       await this.stampService.save(newStampsForInserting);
 
       const cardWithSlots = await this.cardService.findSlotsByCardId(
@@ -144,22 +198,13 @@ export class VoucherService {
           CardStatuses.Completed,
         );
       }
-      const response = await this.cardService.findSlotsByCardId(
+      const freshedCards = await this.cardService.findSlotsByCardId(
         cardIdsToUpdateStatus,
       );
 
-      return response;
+      payload.cards.push(...freshedCards);
 
-      if (isLimitedMode()) {
-        const currentCardQuantity =
-          await this.cardService.getExistingCardsCount(voucher.id, customer.id);
-
-        const canFitAllStamps = voucher.policy.maxReissue - currentCardQuantity;
-
-        if (!canFitAllStamps) {
-          throw new Error('not enought slots for stamps');
-        }
-      }
+      return payload;
     }
 
     return false;

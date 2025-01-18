@@ -130,6 +130,7 @@ describe('Card tests', () => {
       resource: 'Card',
       apiVersion: 'v1',
       payload: {
+        leftoverStamps: 0,
         cards: [
           {
             id: expect.any(String),
@@ -208,6 +209,7 @@ describe('Card tests', () => {
       resource: 'Card',
       apiVersion: 'v1',
       payload: {
+        leftoverStamps: 0,
         cards: [
           {
             id: expect.any(String),
@@ -292,6 +294,7 @@ describe('Card tests', () => {
       resource: 'Card',
       apiVersion: 'v1',
       payload: {
+        leftoverStamps: 0,
         cards: [
           {
             id: expect.any(String),
@@ -396,6 +399,7 @@ describe('Card tests', () => {
       resource: 'Card',
       apiVersion: 'v1',
       payload: {
+        leftoverStamps: 0,
         cards: [
           {
             id: expect.any(String),
@@ -561,6 +565,7 @@ describe('Card tests', () => {
       resource: 'Card',
       apiVersion: 'v1',
       payload: {
+        leftoverStamps: 0,
         cards: [
           {
             id: expect.any(String),
@@ -681,7 +686,7 @@ describe('Card tests', () => {
       policy: {
         ...voucher.policy,
         stamps_required_for_reward,
-        issue_mode: IssueModes.Unlimited,
+        issue_mode: IssueModes.Limited,
         max_reissue: 2,
       },
     }));
@@ -733,6 +738,7 @@ describe('Card tests', () => {
       resource: 'Card',
       apiVersion: 'v1',
       payload: {
+        leftoverStamps: 3,
         cards: [
           {
             id: expect.any(String),
@@ -814,33 +820,32 @@ describe('Card tests', () => {
               },
             ],
           },
-          {
-            id: expect.any(String),
-            status: CardStatuses.Activated,
-            customer: {
-              name: customer.name,
-              phone: customer.phone,
-            },
-            stamps: [
-              {
-                id: expect.any(String),
-                posId: pos.id,
-                action: StampActions.AddStamp,
-              },
-              {
-                id: expect.any(String),
-                posId: pos.id,
-                action: StampActions.AddStamp,
-              },
-              {
-                id: expect.any(String),
-                posId: pos.id,
-                action: StampActions.AddStamp,
-              },
-            ],
-          },
+          // {
+          //   id: expect.any(String),
+          //   status: CardStatuses.Activated,
+          //   customer: {
+          //     name: customer.name,
+          //     phone: customer.phone,
+          //   },
+          //   stamps: [
+          //     {
+          //       id: expect.any(String),
+          //       posId: pos.id,
+          //       action: StampActions.AddStamp,
+          //     },
+          //     {
+          //       id: expect.any(String),
+          //       posId: pos.id,
+          //       action: StampActions.AddStamp,
+          //     },
+          //     {
+          //       id: expect.any(String),
+          //       posId: pos.id,
+          //       action: StampActions.AddStamp,
+          //     },
+          //   ],
+          // },
         ],
-        leftoverStamps: 2,
       },
     });
   });

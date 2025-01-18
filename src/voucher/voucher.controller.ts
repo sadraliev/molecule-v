@@ -55,7 +55,7 @@ export class VoucherController {
     @Param('voucherId') voucherId: string,
   ) {
     try {
-      const response = await this.voucherService.addStampsToCard({
+      const payload = await this.voucherService.addStampsToCard({
         ...body,
         voucherId,
       });
@@ -64,9 +64,7 @@ export class VoucherController {
         resource: 'Card',
         apiVersion: 'v1',
         ok: true,
-        payload: {
-          cards: response,
-        },
+        payload,
       };
     } catch (error) {
       this.logger.warn(
