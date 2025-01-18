@@ -895,9 +895,9 @@ describe('Card tests', () => {
       },
     });
   });
-  it('Ensure stamps are correctly distributed across (only new )cards in limited mode when adding more stamps than available slots (with pre-existing stamps)', async () => {
+  it('Ensure stamps are correctly distributed across (only new) cards in limited mode when adding more stamps than available slots (with pre-existing stamps)', async () => {
     const stamps_required_for_reward = 6;
-    const stampsToAdd = 14;
+    const stampsToAdd = 24;
 
     const withUnlimitedMode = createVoucherDto((voucher) => ({
       ...voucher,
@@ -905,6 +905,7 @@ describe('Card tests', () => {
         ...voucher.policy,
         stamps_required_for_reward,
         issue_mode: IssueModes.Limited,
+        max_reissue: 2,
       },
     }));
     const userIdFromJwtToken = 'Jonh-Wick';
@@ -948,7 +949,7 @@ describe('Card tests', () => {
       resource: 'Card',
       apiVersion: 'v1',
       payload: {
-        leftoverStamps: 3,
+        leftoverStamps: 12,
         cards: [
           {
             id: expect.any(String),

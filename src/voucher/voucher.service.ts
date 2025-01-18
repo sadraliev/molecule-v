@@ -86,20 +86,19 @@ export class VoucherService {
     const customer = await this.customerService.findOrCreate(forCustomer);
     const card = await this.cardService.findActive(voucher.id, customer.id);
 
-    const cardIdsToUpdateStatus = [card._id.toString()];
+    const cardIdsToUpdateStatus = [];
     const newStampsForInserting = [];
     const isLimitedMode = () => voucher.policy.issueMode === 'limited';
     const isUnliminedMode = () => voucher.policy.issueMode === 'unlimited';
 
-    const existingSlots = await this.stampService.getStampsByCardId(
-      card._id.toString(),
-    );
+    if (!card) {
+      const card = await this.cardService.save(voucher.id, customer.id);
 
-    if (!existingSlots.length) {
-      this.logger.warn('Detected the card without slots');
-    }
+      cardIdsToUpdateStatus.push(card._id.toString());
+      const existingSlots = await this.stampService.getStampsByCardId(
+        card._id.toString(),
+      );
 
-    if (card) {
       const stamps = stampsDistributor({
         maxSlotsPerCard: voucher.policy.stampsRequiredForReward,
         occupiedSlots: existingSlots.length,
@@ -207,6 +206,117 @@ export class VoucherService {
       return payload;
     }
 
-    return false;
+    cardIdsToUpdateStatus.push(card._id.toString());
+    const existingSlots = await this.stampService.getStampsByCardId(
+      card._id.toString(),
+    );
+
+    if (!existingSlots.length) {
+      this.logger.warn('Detected the card without slots');
+    }
+    const stamps = stampsDistributor({
+      maxSlotsPerCard: voucher.policy.stampsRequiredForReward,
+      occupiedSlots: existingSlots.length,
+      stampsToAdd,
+    });
+
+    const [stampsForExistingCard, stampsForNewCards] = partition(
+      (card) => card.isNew === false,
+      stamps.cards,
+    );
+
+    if (stampsForExistingCard.length) {
+      stampsForExistingCard.forEach(({ stamps }) =>
+        stamps.forEach(() =>
+          newStampsForInserting.push({ cardId: card._id.toString(), posId }),
+        ),
+      );
+    }
+
+    if (isUnliminedMode()) {
+      for (const card of stampsForNewCards) {
+        const newCard = await this.cardService.save(voucher.id, customer.id);
+
+        card.stamps.forEach(() =>
+          newStampsForInserting.push({ cardId: newCard.id, posId }),
+        );
+        cardIdsToUpdateStatus.push(newCard._id.toString());
+      }
+    }
+
+    if (isLimitedMode()) {
+      const currentCardQuantity = await this.cardService.getExistingCardsCount(
+        voucher.id,
+        customer.id,
+      );
+
+      const availableCardsForNewStamps = Math.max(
+        0,
+        voucher.policy.maxReissue - currentCardQuantity,
+      );
+
+      const canFitAllStamps =
+        stampsForNewCards.length <= availableCardsForNewStamps;
+
+      if (canFitAllStamps) {
+        for (const card of stampsForNewCards) {
+          const newCard = await this.cardService.save(voucher.id, customer.id);
+
+          card.stamps.forEach(() =>
+            newStampsForInserting.push({ cardId: newCard.id, posId }),
+          );
+          cardIdsToUpdateStatus.push(newCard._id.toString());
+        }
+      }
+      const availableStampsForNewCards = stampsForNewCards.slice(
+        0,
+        availableCardsForNewStamps,
+      );
+
+      const remainingStamps = stampsForNewCards.slice(
+        availableCardsForNewStamps,
+      );
+
+      for (const card of availableStampsForNewCards) {
+        const newCard = await this.cardService.save(voucher.id, customer.id);
+
+        card.stamps.forEach(() =>
+          newStampsForInserting.push({ cardId: newCard.id, posId }),
+        );
+        cardIdsToUpdateStatus.push(newCard._id.toString());
+      }
+
+      payload.leftoverStamps = remainingStamps.reduce(
+        (acc, cur) => acc + cur.stamps.length,
+        0,
+      );
+    }
+
+    await this.stampService.save(newStampsForInserting);
+
+    const cardWithSlots = await this.cardService.findSlotsByCardId(
+      cardIdsToUpdateStatus,
+    );
+
+    const completedCards = cardWithSlots
+      .filter(
+        (filledCard) =>
+          filledCard.stamps.length === voucher.policy.stampsRequiredForReward,
+      )
+      .map((fullcard) => fullcard.id);
+
+    if (completedCards.length) {
+      await this.cardService.updateStatus(
+        completedCards,
+        CardStatuses.Completed,
+      );
+    }
+    const freshedCards = await this.cardService.findSlotsByCardId(
+      cardIdsToUpdateStatus,
+    );
+
+    payload.cards.push(...freshedCards);
+
+    return payload;
   }
 }
