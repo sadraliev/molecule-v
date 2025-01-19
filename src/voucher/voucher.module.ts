@@ -11,6 +11,7 @@ import {
   VoucherSchema,
 } from './schemas/voucher.schema';
 import { VoucherController } from './voucher.controller';
+import { VoucherRepository } from './voucher.repository';
 import { VoucherService } from './voucher.service';
 
 @Module({
@@ -33,7 +34,8 @@ import { VoucherService } from './voucher.service';
     CardModule,
     CustomerModule,
   ],
-  providers: [VoucherService],
+  providers: [VoucherService, VoucherRepository],
+  exports: [VoucherService, VoucherRepository],
   controllers: [VoucherController],
 })
 export class VoucherModule {}

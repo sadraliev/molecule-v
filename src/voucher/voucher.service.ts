@@ -15,22 +15,11 @@ import { stampsDistributor } from './libs/distibutor';
 import { CardService } from './modules/card/card.service';
 import { CardStatuses } from './modules/card/card.types';
 import { StampService } from './modules/stamp/stamp.service';
-import {
-  InjectPolicy,
-  PolicyDocument,
-  PolicyModel,
-} from './schemas/policy.schema';
-import {
-  InjectReward,
-  RewardDocument,
-  RewardModel,
-} from './schemas/reward.schema';
-import {
-  InjectVoicher,
-  VoucherDocument,
-  VoucherModel,
-} from './schemas/voucher.schema';
+import { InjectPolicy, PolicyModel } from './schemas/policy.schema';
+import { InjectReward, RewardModel } from './schemas/reward.schema';
+import { VoucherDocument } from './schemas/voucher.schema';
 import { VoucherId } from './types/voucher.types';
+import { VoucherRepository } from './voucher.repository';
 
 @Injectable()
 export class VoucherService {
@@ -40,9 +29,7 @@ export class VoucherService {
     private readonly rewardModel: RewardModel,
     @InjectPolicy()
     private readonly policyModel: PolicyModel,
-    @InjectVoicher()
-    private readonly voucherModel: VoucherModel,
-
+    private readonly voucherRepository: VoucherRepository,
     private readonly customerService: CustomerService,
 
     private readonly cardService: CardService,
@@ -62,8 +49,8 @@ export class VoucherService {
 
     const reward = await new this.rewardModel(getReward(createVoucher)).save();
 
-    const fulledVoucher = withPolicy(reward.id);
-    const voucher = await new this.voucherModel(fulledVoucher).save();
+    const fullVoucher = withPolicy(reward.id) as any;
+    const voucher = await this.voucherRepository.save(fullVoucher);
 
     return voucher;
   }
@@ -78,10 +65,7 @@ export class VoucherService {
       cards: [],
       leftoverStamps: 0,
     };
-    const voucher = await this.voucherModel
-      .findById(voucherId)
-      .populate<{ policy: PolicyDocument }>('policyId')
-      .populate<{ reward: RewardDocument }>('rewardId');
+    const voucher = await this.voucherRepository.findById(voucherId);
 
     const customer = await this.customerService.findOrCreate(forCustomer);
     const card = await this.cardService.findActive(voucher.id, customer.id);
