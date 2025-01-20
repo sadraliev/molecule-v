@@ -10,6 +10,8 @@ unit:
 	npm run test:watch
 e2e:
 	npm run test:e2e -- $(file) --watch --detectOpenHandles
+seed:
+	npm run seed
 
 mongodb:
 	docker-compose --env-file .env.development.local up mongodb -d
