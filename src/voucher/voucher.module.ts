@@ -35,5 +35,6 @@ import { VoucherService } from './voucher.service';
   ],
   providers: [VoucherService],
   controllers: [VoucherController],
+  exports: [VoucherService],
 })
 export class VoucherModule {}
