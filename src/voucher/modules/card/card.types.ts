@@ -1,4 +1,7 @@
-import { ISODate } from 'src/lib';
+import { EntityBase, ISODate } from 'src/lib';
+import { Customer } from 'src/organization/customer/types/customer.types';
+
+import { Stamp } from '../stamp/stamp.types';
 
 /**
  * Status of the voucher lifecycle:
@@ -20,10 +23,19 @@ export type Card = {
   voucherId: string;
   customerId: string;
 
-  status: CardStatus;
   redeemPosId?: string;
   completedAt?: ISODate;
   redeemAt?: ISODate;
 };
 
 export type CardId = string;
+export type ThinEntity = Card & {
+  status: CardStatus;
+};
+export type CardEntity = EntityBase<ThinEntity>;
+
+export type CirculatingCard = Card & {
+  id: string;
+  stamps: Stamp[] & { id: string };
+  customer: Omit<Customer, 'status'>;
+};

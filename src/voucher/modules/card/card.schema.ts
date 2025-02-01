@@ -35,3 +35,13 @@ export class CardDefinition implements Card {
 export const CARD_COLLECTION_NAME = 'cards';
 export const InjectCard = () => InjectModel(CARD_COLLECTION_NAME);
 export const CardSchema = SchemaFactory.createForClass(CardDefinition);
+
+CardSchema.set('toObject', {
+  transform: (_doc, ret) => {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+
+    return ret;
+  },
+});

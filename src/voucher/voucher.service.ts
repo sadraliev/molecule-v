@@ -67,6 +67,7 @@ export class VoucherService {
       cards: [],
       leftoverStamps: 0,
     };
+
     const voucher = await this.voucherRepository.findById(voucherId);
 
     const customer = await this.customerService.findOrCreate(forCustomer);
@@ -81,10 +82,8 @@ export class VoucherService {
     if (!card) {
       const card = await this.cardService.save(voucher.id, customer.id);
 
-      cardIdsToUpdateStatus.push(card._id.toString());
-      const existingSlots = await this.stampService.getStampsByCardId(
-        card._id.toString(),
-      );
+      cardIdsToUpdateStatus.push(card.id);
+      const existingSlots = await this.stampService.getStampsByCardId(card.id);
 
       const stamps = stampsDistributor({
         maxSlotsPerCard: voucher.policy.stampsRequiredForReward,
@@ -100,7 +99,7 @@ export class VoucherService {
       if (stampsForExistingCard.length) {
         stampsForExistingCard.forEach(({ stamps }) =>
           stamps.forEach(() =>
-            newStampsForInserting.push({ cardId: card._id.toString(), posId }),
+            newStampsForInserting.push({ cardId: card.id, posId }),
           ),
         );
       }
@@ -112,7 +111,7 @@ export class VoucherService {
           card.stamps.forEach(() =>
             newStampsForInserting.push({ cardId: newCard.id, posId }),
           );
-          cardIdsToUpdateStatus.push(newCard._id.toString());
+          cardIdsToUpdateStatus.push(newCard.id);
         }
       }
 
@@ -138,7 +137,7 @@ export class VoucherService {
             card.stamps.forEach(() =>
               newStampsForInserting.push({ cardId: newCard.id, posId }),
             );
-            cardIdsToUpdateStatus.push(newCard._id.toString());
+            cardIdsToUpdateStatus.push(newCard.id);
           }
         }
         const availableStampsForNewCards = stampsForNewCards.slice(
@@ -156,7 +155,7 @@ export class VoucherService {
           card.stamps.forEach(() =>
             newStampsForInserting.push({ cardId: newCard.id, posId }),
           );
-          cardIdsToUpdateStatus.push(newCard._id.toString());
+          cardIdsToUpdateStatus.push(newCard.id);
         }
 
         payload.leftoverStamps = remainingStamps.reduce(
@@ -167,7 +166,7 @@ export class VoucherService {
 
       await this.stampService.save(newStampsForInserting);
 
-      const cardWithSlots = await this.cardService.findSlotsByCardId(
+      const cardWithSlots = await this.cardService.getCirculatingCards(
         cardIdsToUpdateStatus,
       );
 
@@ -184,7 +183,7 @@ export class VoucherService {
           CardStatuses.Completed,
         );
       }
-      const freshedCards = await this.cardService.findSlotsByCardId(
+      const freshedCards = await this.cardService.getCirculatingCards(
         cardIdsToUpdateStatus,
       );
 
@@ -193,10 +192,8 @@ export class VoucherService {
       return payload;
     }
 
-    cardIdsToUpdateStatus.push(card._id.toString());
-    const existingSlots = await this.stampService.getStampsByCardId(
-      card._id.toString(),
-    );
+    cardIdsToUpdateStatus.push(card.id);
+    const existingSlots = await this.stampService.getStampsByCardId(card.id);
 
     if (!existingSlots.length) {
       this.logger.warn('Detected the card without slots');
@@ -215,7 +212,7 @@ export class VoucherService {
     if (stampsForExistingCard.length) {
       stampsForExistingCard.forEach(({ stamps }) =>
         stamps.forEach(() =>
-          newStampsForInserting.push({ cardId: card._id.toString(), posId }),
+          newStampsForInserting.push({ cardId: card.id, posId }),
         ),
       );
     }
@@ -227,7 +224,7 @@ export class VoucherService {
         card.stamps.forEach(() =>
           newStampsForInserting.push({ cardId: newCard.id, posId }),
         );
-        cardIdsToUpdateStatus.push(newCard._id.toString());
+        cardIdsToUpdateStatus.push(newCard.id);
       }
     }
 
@@ -252,7 +249,7 @@ export class VoucherService {
           card.stamps.forEach(() =>
             newStampsForInserting.push({ cardId: newCard.id, posId }),
           );
-          cardIdsToUpdateStatus.push(newCard._id.toString());
+          cardIdsToUpdateStatus.push(newCard.id);
         }
       }
       const availableStampsForNewCards = stampsForNewCards.slice(
@@ -270,7 +267,7 @@ export class VoucherService {
         card.stamps.forEach(() =>
           newStampsForInserting.push({ cardId: newCard.id, posId }),
         );
-        cardIdsToUpdateStatus.push(newCard._id.toString());
+        cardIdsToUpdateStatus.push(newCard.id);
       }
 
       payload.leftoverStamps = remainingStamps.reduce(
@@ -281,7 +278,7 @@ export class VoucherService {
 
     await this.stampService.save(newStampsForInserting);
 
-    const cardWithSlots = await this.cardService.findSlotsByCardId(
+    const cardWithSlots = await this.cardService.getCirculatingCards(
       cardIdsToUpdateStatus,
     );
 
@@ -298,7 +295,7 @@ export class VoucherService {
         CardStatuses.Completed,
       );
     }
-    const freshedCards = await this.cardService.findSlotsByCardId(
+    const freshedCards = await this.cardService.getCirculatingCards(
       cardIdsToUpdateStatus,
     );
 
