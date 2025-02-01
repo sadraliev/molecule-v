@@ -1,3 +1,5 @@
+import { EntityBase } from 'src/lib';
+
 export const IssueModes = {
   Limited: 'limited',
   Unlimited: 'unlimited',
@@ -20,3 +22,5 @@ export type Policy = {
 };
 
 export type PolicyId = string;
+
+export type PolicyEntity = EntityBase<Policy>;

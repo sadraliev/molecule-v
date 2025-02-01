@@ -1,4 +1,10 @@
 {
     "editor.lineNumbers": "relative",
     "vim.smartRelativeLine": true,
+    "zenMode.hideStatusBar": false,
+    "zenMode.showTabs": "multiple",
+    "zenMode.hideLineNumbers": false,
+    "zenMode.hideActivityBar": true,
+    "zenMode.fullScreen": true,
+    "zenMode.centerLayout": true
 }
