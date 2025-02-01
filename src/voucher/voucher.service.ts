@@ -16,9 +16,10 @@ import { CardService } from './modules/card/card.service';
 import { CardStatuses } from './modules/card/card.types';
 import { StampService } from './modules/stamp/stamp.service';
 import { PolicyRepository } from './policy.repository';
-import { InjectReward, RewardModel } from './schemas/reward.schema';
+import { RewardRepository } from './reward.repository';
 import { VoucherDocument } from './schemas/voucher.schema';
 import { Policy } from './types/policy.types';
+import { Reward } from './types/reward.types';
 import { VoucherId } from './types/voucher.types';
 import { VoucherRepository } from './voucher.repository';
 
@@ -26,8 +27,7 @@ import { VoucherRepository } from './voucher.repository';
 export class VoucherService {
   readonly logger = new Logger('Voucher service');
   constructor(
-    @InjectReward()
-    private readonly rewardModel: RewardModel,
+    private readonly rewardRepository: RewardRepository,
     private readonly policyRepository: PolicyRepository,
     private readonly voucherRepository: VoucherRepository,
     private readonly customerService: CustomerService,
@@ -48,7 +48,8 @@ export class VoucherService {
 
     const withPolicy = withUser(policy.id);
 
-    const reward = await new this.rewardModel(getReward(createVoucher)).save();
+    const rewardDto = getReward(createVoucher) as Reward;
+    const reward = await this.rewardRepository.save(rewardDto);
 
     const fullVoucher = withPolicy(reward.id) as any;
     const voucher = await this.voucherRepository.save(fullVoucher);
