@@ -22,5 +22,15 @@ export type PolicyDocument = HydratedDocument<PolicyDefinition>;
 export type PolicyModel = Model<PolicyDefinition>;
 
 export const POLICY_COLLECTION_NAME = 'policies';
-export const PolicySchema = SchemaFactory.createForClass(PolicyDefinition);
 export const InjectPolicy = () => InjectModel(POLICY_COLLECTION_NAME);
+
+export const PolicySchema = SchemaFactory.createForClass(PolicyDefinition);
+PolicySchema.set('toObject', {
+  transform: function (doc, ret) {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+
+    return ret;
+  },
+});

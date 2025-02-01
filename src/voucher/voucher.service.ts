@@ -15,9 +15,10 @@ import { stampsDistributor } from './libs/distibutor';
 import { CardService } from './modules/card/card.service';
 import { CardStatuses } from './modules/card/card.types';
 import { StampService } from './modules/stamp/stamp.service';
-import { InjectPolicy, PolicyModel } from './schemas/policy.schema';
+import { PolicyRepository } from './policy.repository';
 import { InjectReward, RewardModel } from './schemas/reward.schema';
 import { VoucherDocument } from './schemas/voucher.schema';
+import { Policy } from './types/policy.types';
 import { VoucherId } from './types/voucher.types';
 import { VoucherRepository } from './voucher.repository';
 
@@ -27,8 +28,7 @@ export class VoucherService {
   constructor(
     @InjectReward()
     private readonly rewardModel: RewardModel,
-    @InjectPolicy()
-    private readonly policyModel: PolicyModel,
+    private readonly policyRepository: PolicyRepository,
     private readonly voucherRepository: VoucherRepository,
     private readonly customerService: CustomerService,
 
@@ -43,7 +43,8 @@ export class VoucherService {
   ): Promise<VoucherDocument> {
     const withUser = makeVoucher(userId, getVoucher(createVoucher));
 
-    const policy = await new this.policyModel(getPolicy(createVoucher)).save();
+    const policyDto = getPolicy(createVoucher) as Policy;
+    const policy = await this.policyRepository.save(policyDto);
 
     const withPolicy = withUser(policy.id);
 
