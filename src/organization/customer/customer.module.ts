@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { CustomerRepository } from './customer.repository';
 import { CustomerService } from './customer.service';
 import {
   CUSTOMER_COLLECTION_NAME,
@@ -13,7 +14,7 @@ import {
       { name: CUSTOMER_COLLECTION_NAME, schema: CustomerSchema },
     ]),
   ],
-  providers: [CustomerService],
+  providers: [CustomerService, CustomerRepository],
   exports: [CustomerService],
 })
 export class CustomerModule {}

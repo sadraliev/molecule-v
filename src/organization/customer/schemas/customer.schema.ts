@@ -17,3 +17,12 @@ export class CustomerDefinition {
 export const CUSTOMER_COLLECTION_NAME = 'customers';
 export const InjectCustomer = () => InjectModel(CUSTOMER_COLLECTION_NAME);
 export const CustomerSchema = SchemaFactory.createForClass(CustomerDefinition);
+CustomerSchema.set('toObject', {
+  transform: (_doc, ret) => {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+
+    return ret;
+  },
+});

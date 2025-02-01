@@ -70,6 +70,7 @@ export class VoucherService {
     const voucher = await this.voucherRepository.findById(voucherId);
 
     const customer = await this.customerService.findOrCreate(forCustomer);
+
     const card = await this.cardService.findActive(voucher.id, customer.id);
 
     const cardIdsToUpdateStatus = [];
