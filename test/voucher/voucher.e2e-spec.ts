@@ -28,7 +28,7 @@ describe('Voucher', () => {
 
   let connection: Connection;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -78,9 +78,8 @@ describe('Voucher', () => {
       },
     });
 
-    const voucher = await voucherModel
-      .findById(response.body.payload.id)
-      .lean();
+    const voucher = await voucherModel.findById(response.body.payload.id);
+    // .lean();
     const policy = await policyModel.findById(voucher.policyId).lean();
     const reward = await rewardModel.findById(voucher.rewardId).lean();
 

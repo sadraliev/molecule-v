@@ -1,4 +1,4 @@
-import { ISODate, UserId } from 'src/lib';
+import { EntityBase, ISODate, UserId } from 'src/lib';
 
 import { PolicyId } from './policy.types';
 import { RewardId } from './reward.types';
@@ -22,7 +22,6 @@ export type Voucher = {
   rewardId: RewardId;
   policyId: PolicyId;
 
-  status: VoucherState;
   name: string;
   promotionName: string;
 
@@ -32,4 +31,4 @@ export type Voucher = {
 };
 export type VoucherId = string;
 
-export type VoucherCreationRequest = Omit<Voucher, 'status'>;
+export type VoucherEntity = EntityBase<Voucher, { status: VoucherState }>;

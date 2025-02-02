@@ -22,7 +22,7 @@ export const InjectReward = () => InjectModel(REWARD_COLLECTION_NAME);
 
 export const RewardSchema = SchemaFactory.createForClass(RewardDefinition);
 RewardSchema.set('toObject', {
-  transform: (_doc, ret) => {
+  transform: function (_, ret) {
     ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;

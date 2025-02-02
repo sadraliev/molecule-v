@@ -37,7 +37,7 @@ export const InjectCard = () => InjectModel(CARD_COLLECTION_NAME);
 export const CardSchema = SchemaFactory.createForClass(CardDefinition);
 
 CardSchema.set('toObject', {
-  transform: (_doc, ret) => {
+  transform: (_, ret) => {
     ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;
