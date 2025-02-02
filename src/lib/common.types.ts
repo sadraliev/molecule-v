@@ -13,8 +13,9 @@ export type User = {
 
 export type UserId = string;
 
-export type EntityBase<T> = T & {
-  id: Uuid;
-  createdAt: ISODate;
-  updatedAt: ISODate;
-};
+export type EntityBase<T, O = object> = T &
+  O & {
+    id: Uuid;
+    createdAt: ISODate;
+    updatedAt: ISODate;
+  };

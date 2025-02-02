@@ -29,10 +29,7 @@ export type Card = {
 };
 
 export type CardId = string;
-export type ThinEntity = Card & {
-  status: CardStatus;
-};
-export type CardEntity = EntityBase<ThinEntity>;
+export type CardEntity = EntityBase<Card, { status: CardStatus }>;
 
 export type CirculatingCard = Card & {
   id: string;
