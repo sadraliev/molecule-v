@@ -3,18 +3,13 @@ import { CustomerId } from 'src/organization/customer/types/customer.types';
 import { VoucherId } from 'src/voucher/types/voucher.types';
 
 import { CardRepository } from './card.repository';
-import { CardModel, InjectCard } from './card.schema';
 import { CardEntity, CardId, CardStatus, CardStatuses } from './card.types';
 
 @Injectable()
 export class CardService {
   readonly logger = new Logger('Card Service');
 
-  constructor(
-    @InjectCard()
-    private readonly cardModel: CardModel,
-    private readonly cardRepository: CardRepository,
-  ) {}
+  constructor(private readonly cardRepository: CardRepository) {}
 
   async findActive(
     voucherId: VoucherId,

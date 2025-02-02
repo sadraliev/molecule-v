@@ -21,3 +21,13 @@ export class StampDefinition {
 export const STAMP_COLLECTION_NAME = 'stamps';
 export const InjectStamp = () => InjectModel(STAMP_COLLECTION_NAME);
 export const StampSchema = SchemaFactory.createForClass(StampDefinition);
+StampSchema.set('toObject', {
+  transform: (_doc, ret) => {
+    ret.id = ret._id.toString();
+
+    delete ret._id;
+    delete ret.__v;
+
+    return ret;
+  },
+});

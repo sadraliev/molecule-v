@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { StampRepository } from './stamp.repository';
 import { STAMP_COLLECTION_NAME, StampSchema } from './stamp.schema';
 import { StampService } from './stamp.service';
 
@@ -10,7 +11,7 @@ import { StampService } from './stamp.service';
       { name: STAMP_COLLECTION_NAME, schema: StampSchema },
     ]),
   ],
-  providers: [StampService],
+  providers: [StampService, StampRepository],
   exports: [StampService],
 })
 export class StampModule {}
