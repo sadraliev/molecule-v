@@ -53,7 +53,7 @@ export class VoucherController {
       throw new HttpException(error.status, error.message);
     }
   }
-
+  //TODO: refactor - remove /stamps path
   @Post('/:voucherId/cards/stamps')
   async createStampsToCard(
     @Body() body: createStampsDto,
