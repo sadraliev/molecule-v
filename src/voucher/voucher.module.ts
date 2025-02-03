@@ -4,6 +4,8 @@ import { CustomerModule } from 'src/organization/customer/customer.module';
 
 import { CardModule } from './modules/card/card.module';
 import { StampModule } from './modules/stamp/stamp.module';
+import { PolicyRepository } from './policy.repository';
+import { RewardRepository } from './reward.repository';
 import { POLICY_COLLECTION_NAME, PolicySchema } from './schemas/policy.schema';
 import { REWARD_COLLECTION_NAME, RewardSchema } from './schemas/reward.schema';
 import {
@@ -11,6 +13,7 @@ import {
   VoucherSchema,
 } from './schemas/voucher.schema';
 import { VoucherController } from './voucher.controller';
+import { VoucherRepository } from './voucher.repository';
 import { VoucherService } from './voucher.service';
 
 @Module({
@@ -33,7 +36,13 @@ import { VoucherService } from './voucher.service';
     CardModule,
     CustomerModule,
   ],
-  providers: [VoucherService],
+  providers: [
+    VoucherService,
+    VoucherRepository,
+    PolicyRepository,
+    RewardRepository,
+  ],
+  exports: [VoucherService],
   controllers: [VoucherController],
 })
 export class VoucherModule {}

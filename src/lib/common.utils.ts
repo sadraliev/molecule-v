@@ -1,3 +1,7 @@
+import { Types } from 'mongoose';
+
+import { Uuid } from './common.types';
+
 type CamelCase<S extends string> = S extends `${infer P}_${infer Rest}`
   ? `${P}${Capitalize<CamelCase<Rest>>}`
   : S;
@@ -76,4 +80,12 @@ export const toSnakeCase = <T>(obj: T): Snakify<T> => {
     },
     {} as Record<string, any>,
   ) as Snakify<T>;
+};
+
+export const toObjectId = (id: Uuid | Uuid[]) => {
+  if (Array.isArray(id)) {
+    return id.map((id) => new Types.ObjectId(id));
+  }
+
+  return new Types.ObjectId(id);
 };

@@ -28,7 +28,7 @@ describe('Voucher', () => {
 
   let connection: Connection;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -47,12 +47,12 @@ describe('Voucher', () => {
     rewardModel = moduleFixture.get(getModelToken(REWARD_COLLECTION_NAME));
 
     connection = voucherModel.db;
+    await connection.dropDatabase();
   });
 
   afterAll(async () => {
-    await connection.dropDatabase();
-    await app.close();
     await connection.close();
+    await app.close();
   });
 
   it('As a Owner, I want to issue a new voucher with auto mode', async () => {
@@ -78,9 +78,7 @@ describe('Voucher', () => {
       },
     });
 
-    const voucher = await voucherModel
-      .findById(response.body.payload.id)
-      .lean();
+    const voucher = await voucherModel.findById(response.body.payload.id);
     const policy = await policyModel.findById(voucher.policyId).lean();
     const reward = await rewardModel.findById(voucher.rewardId).lean();
 

@@ -1,7 +1,7 @@
-import { ISODate, UserId } from 'src/lib';
+import { EntityBase, ISODate, UserId } from 'src/lib';
 
-import { PolicyId } from './policy.types';
-import { RewardId } from './reward.types';
+import { PolicyEntity, PolicyId } from './policy.types';
+import { RewardEntity, RewardId } from './reward.types';
 
 /**
  * Status of the voucher lifecycle:
@@ -22,7 +22,6 @@ export type Voucher = {
   rewardId: RewardId;
   policyId: PolicyId;
 
-  status: VoucherState;
   name: string;
   promotionName: string;
 
@@ -32,4 +31,8 @@ export type Voucher = {
 };
 export type VoucherId = string;
 
-export type VoucherCreationRequest = Omit<Voucher, 'status'>;
+export type VoucherEntity = EntityBase<Voucher, { status: VoucherState }>;
+export type UnfoldedVoucher = Omit<VoucherEntity, 'rewardId' | 'policyId'> & {
+  policy: PolicyEntity;
+  reward: RewardEntity;
+};
