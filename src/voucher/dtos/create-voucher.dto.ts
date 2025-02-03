@@ -16,14 +16,14 @@ export class CreateVoucherResponseDto {
   };
 }
 
-class CreatePolicyDto {
+export class CreatePolicyDto {
   name: string;
   issue_mode: IssueMode;
   max_reissue?: number;
   stamps_required_for_reward: number;
 }
 
-class CreateRewardDto {
+export class CreateRewardDto {
   name: string;
   description?: string;
   terms_url?: string;

@@ -1,3 +1,5 @@
+import { EntityBase } from 'src/lib';
+
 export const StampActions = {
   AddStamp: 'add a stamp',
   RemoveStamp: 'remove a stamp',
@@ -14,3 +16,5 @@ export type Stamp = {
 export type StampId = string;
 
 export type CreateStamp = Omit<Stamp, 'action'>;
+
+export type StampEntity = EntityBase<Stamp>;

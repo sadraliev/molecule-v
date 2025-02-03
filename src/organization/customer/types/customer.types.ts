@@ -1,4 +1,4 @@
-import { PhoneNumber } from 'src/lib';
+import { EntityBase, PhoneNumber } from 'src/lib';
 
 export const customerStates = ['unverified', 'verified'] as const;
 export type CustomerStatus = (typeof customerStates)[number];
@@ -10,3 +10,5 @@ export type Customer = {
 };
 
 export type CustomerId = string;
+
+export type CustomerEntity = EntityBase<Customer>;

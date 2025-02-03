@@ -18,5 +18,15 @@ export type RewardDocument = HydratedDocument<RewardDefinition>;
 export type RewardModel = Model<RewardDefinition>;
 
 export const REWARD_COLLECTION_NAME = 'rewards';
-export const RewardSchema = SchemaFactory.createForClass(RewardDefinition);
 export const InjectReward = () => InjectModel(REWARD_COLLECTION_NAME);
+
+export const RewardSchema = SchemaFactory.createForClass(RewardDefinition);
+RewardSchema.set('toObject', {
+  transform: function (_, ret) {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+
+    return ret;
+  },
+});

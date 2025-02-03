@@ -15,38 +15,24 @@ import { stampsDistributor } from './libs/distibutor';
 import { CardService } from './modules/card/card.service';
 import { CardStatuses } from './modules/card/card.types';
 import { StampService } from './modules/stamp/stamp.service';
-import {
-  InjectPolicy,
-  PolicyDocument,
-  PolicyModel,
-} from './schemas/policy.schema';
-import {
-  InjectReward,
-  RewardDocument,
-  RewardModel,
-} from './schemas/reward.schema';
-import {
-  InjectVoicher,
-  VoucherDocument,
-  VoucherModel,
-} from './schemas/voucher.schema';
+import { PolicyRepository } from './policy.repository';
+import { RewardRepository } from './reward.repository';
+import { VoucherDocument } from './schemas/voucher.schema';
+import { Policy } from './types/policy.types';
+import { Reward } from './types/reward.types';
 import { VoucherId } from './types/voucher.types';
+import { VoucherRepository } from './voucher.repository';
 
 @Injectable()
 export class VoucherService {
   readonly logger = new Logger('Voucher service');
   constructor(
-    @InjectReward()
-    private readonly rewardModel: RewardModel,
-    @InjectPolicy()
-    private readonly policyModel: PolicyModel,
-    @InjectVoicher()
-    private readonly voucherModel: VoucherModel,
+    private readonly rewardRepository: RewardRepository,
+    private readonly policyRepository: PolicyRepository,
+    private readonly voucherRepository: VoucherRepository,
 
     private readonly customerService: CustomerService,
-
     private readonly cardService: CardService,
-
     private readonly stampService: StampService,
   ) {}
 
@@ -56,14 +42,16 @@ export class VoucherService {
   ): Promise<VoucherDocument> {
     const withUser = makeVoucher(userId, getVoucher(createVoucher));
 
-    const policy = await new this.policyModel(getPolicy(createVoucher)).save();
+    const policyDto = getPolicy(createVoucher) as Policy;
+    const policy = await this.policyRepository.save(policyDto);
 
     const withPolicy = withUser(policy.id);
 
-    const reward = await new this.rewardModel(getReward(createVoucher)).save();
+    const rewardDto = getReward(createVoucher) as Reward;
+    const reward = await this.rewardRepository.save(rewardDto);
 
-    const fulledVoucher = withPolicy(reward.id);
-    const voucher = await new this.voucherModel(fulledVoucher).save();
+    const fullVoucher = withPolicy(reward.id) as any;
+    const voucher = await this.voucherRepository.save(fullVoucher);
 
     return voucher;
   }
@@ -78,12 +66,11 @@ export class VoucherService {
       cards: [],
       leftoverStamps: 0,
     };
-    const voucher = await this.voucherModel
-      .findById(voucherId)
-      .populate<{ policy: PolicyDocument }>('policyId')
-      .populate<{ reward: RewardDocument }>('rewardId');
+
+    const voucher = await this.voucherRepository.findById(voucherId);
 
     const customer = await this.customerService.findOrCreate(forCustomer);
+
     const card = await this.cardService.findActive(voucher.id, customer.id);
 
     const cardIdsToUpdateStatus = [];
@@ -94,10 +81,8 @@ export class VoucherService {
     if (!card) {
       const card = await this.cardService.save(voucher.id, customer.id);
 
-      cardIdsToUpdateStatus.push(card._id.toString());
-      const existingSlots = await this.stampService.getStampsByCardId(
-        card._id.toString(),
-      );
+      cardIdsToUpdateStatus.push(card.id);
+      const existingSlots = await this.stampService.getStampsByCardId(card.id);
 
       const stamps = stampsDistributor({
         maxSlotsPerCard: voucher.policy.stampsRequiredForReward,
@@ -113,7 +98,7 @@ export class VoucherService {
       if (stampsForExistingCard.length) {
         stampsForExistingCard.forEach(({ stamps }) =>
           stamps.forEach(() =>
-            newStampsForInserting.push({ cardId: card._id.toString(), posId }),
+            newStampsForInserting.push({ cardId: card.id, posId }),
           ),
         );
       }
@@ -125,7 +110,7 @@ export class VoucherService {
           card.stamps.forEach(() =>
             newStampsForInserting.push({ cardId: newCard.id, posId }),
           );
-          cardIdsToUpdateStatus.push(newCard._id.toString());
+          cardIdsToUpdateStatus.push(newCard.id);
         }
       }
 
@@ -151,7 +136,7 @@ export class VoucherService {
             card.stamps.forEach(() =>
               newStampsForInserting.push({ cardId: newCard.id, posId }),
             );
-            cardIdsToUpdateStatus.push(newCard._id.toString());
+            cardIdsToUpdateStatus.push(newCard.id);
           }
         }
         const availableStampsForNewCards = stampsForNewCards.slice(
@@ -169,7 +154,7 @@ export class VoucherService {
           card.stamps.forEach(() =>
             newStampsForInserting.push({ cardId: newCard.id, posId }),
           );
-          cardIdsToUpdateStatus.push(newCard._id.toString());
+          cardIdsToUpdateStatus.push(newCard.id);
         }
 
         payload.leftoverStamps = remainingStamps.reduce(
@@ -180,7 +165,7 @@ export class VoucherService {
 
       await this.stampService.save(newStampsForInserting);
 
-      const cardWithSlots = await this.cardService.findSlotsByCardId(
+      const cardWithSlots = await this.cardService.getCirculatingCards(
         cardIdsToUpdateStatus,
       );
 
@@ -197,7 +182,7 @@ export class VoucherService {
           CardStatuses.Completed,
         );
       }
-      const freshedCards = await this.cardService.findSlotsByCardId(
+      const freshedCards = await this.cardService.getCirculatingCards(
         cardIdsToUpdateStatus,
       );
 
@@ -206,10 +191,8 @@ export class VoucherService {
       return payload;
     }
 
-    cardIdsToUpdateStatus.push(card._id.toString());
-    const existingSlots = await this.stampService.getStampsByCardId(
-      card._id.toString(),
-    );
+    cardIdsToUpdateStatus.push(card.id);
+    const existingSlots = await this.stampService.getStampsByCardId(card.id);
 
     if (!existingSlots.length) {
       this.logger.warn('Detected the card without slots');
@@ -228,7 +211,7 @@ export class VoucherService {
     if (stampsForExistingCard.length) {
       stampsForExistingCard.forEach(({ stamps }) =>
         stamps.forEach(() =>
-          newStampsForInserting.push({ cardId: card._id.toString(), posId }),
+          newStampsForInserting.push({ cardId: card.id, posId }),
         ),
       );
     }
@@ -240,7 +223,7 @@ export class VoucherService {
         card.stamps.forEach(() =>
           newStampsForInserting.push({ cardId: newCard.id, posId }),
         );
-        cardIdsToUpdateStatus.push(newCard._id.toString());
+        cardIdsToUpdateStatus.push(newCard.id);
       }
     }
 
@@ -265,7 +248,7 @@ export class VoucherService {
           card.stamps.forEach(() =>
             newStampsForInserting.push({ cardId: newCard.id, posId }),
           );
-          cardIdsToUpdateStatus.push(newCard._id.toString());
+          cardIdsToUpdateStatus.push(newCard.id);
         }
       }
       const availableStampsForNewCards = stampsForNewCards.slice(
@@ -283,7 +266,7 @@ export class VoucherService {
         card.stamps.forEach(() =>
           newStampsForInserting.push({ cardId: newCard.id, posId }),
         );
-        cardIdsToUpdateStatus.push(newCard._id.toString());
+        cardIdsToUpdateStatus.push(newCard.id);
       }
 
       payload.leftoverStamps = remainingStamps.reduce(
@@ -294,7 +277,7 @@ export class VoucherService {
 
     await this.stampService.save(newStampsForInserting);
 
-    const cardWithSlots = await this.cardService.findSlotsByCardId(
+    const cardWithSlots = await this.cardService.getCirculatingCards(
       cardIdsToUpdateStatus,
     );
 
@@ -311,7 +294,7 @@ export class VoucherService {
         CardStatuses.Completed,
       );
     }
-    const freshedCards = await this.cardService.findSlotsByCardId(
+    const freshedCards = await this.cardService.getCirculatingCards(
       cardIdsToUpdateStatus,
     );
 

@@ -7,6 +7,7 @@ import {
   Logger,
   HttpException,
   Param,
+  NotFoundException,
 } from '@nestjs/common';
 
 import { createStampsDto } from './dtos/create-stamp.dto';
@@ -14,13 +15,17 @@ import {
   CreateVoucherDto,
   CreateVoucherResponseDto,
 } from './dtos/create-voucher.dto';
+import { VoucherRepository } from './voucher.repository';
 import { VoucherService } from './voucher.service';
 
 @Controller('vouchers')
 export class VoucherController {
   readonly logger = new Logger('Voucher controller');
 
-  constructor(readonly voucherService: VoucherService) {}
+  constructor(
+    readonly voucherService: VoucherService,
+    readonly voucherRepository: VoucherRepository,
+  ) {}
 
   @Post()
   async create(
@@ -55,6 +60,11 @@ export class VoucherController {
     @Param('voucherId') voucherId: string,
   ) {
     try {
+      const voucher = await this.voucherRepository.findOne({ _id: voucherId });
+
+      if (!voucher) {
+        throw new NotFoundException();
+      }
       const payload = await this.voucherService.addStampsToCard({
         ...body,
         voucherId,
@@ -72,6 +82,7 @@ export class VoucherController {
         error,
         error.stack,
       );
+      console.log('errror', error);
 
       throw new HttpException(error.status, error.message);
     }
