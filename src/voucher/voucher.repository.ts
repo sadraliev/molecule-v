@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { RootFilterQuery } from 'mongoose';
 
-import { PolicyDocument } from './schemas/policy.schema';
-import { RewardDocument } from './schemas/reward.schema';
 import {
   InjectVoicher,
   VoucherModel,
   VoucherDocument,
 } from './schemas/voucher.schema';
-import { VoucherEntity } from './types/voucher.types';
+import { PolicyEntity } from './types/policy.types';
+import { RewardEntity } from './types/reward.types';
+import { UnfoldedVoucher, VoucherEntity } from './types/voucher.types';
 
 @Injectable()
 export class VoucherRepository {
@@ -23,11 +23,29 @@ export class VoucherRepository {
 
     return document.toObject<VoucherEntity>();
   }
-  async findById(voucherId: string) {
-    return this.voucherModel
+  async findById(voucherId: string): Promise<UnfoldedVoucher> {
+    const document = await this.voucherModel
       .findById(voucherId)
-      .populate<{ policy: PolicyDocument }>('policyId')
-      .populate<{ reward: RewardDocument }>('rewardId');
+      .populate('policyId')
+      .populate('rewardId');
+
+    const refined = document.toObject<
+      VoucherEntity & {
+        policyId: PolicyEntity;
+        rewardId: RewardEntity;
+      }
+    >();
+
+    const pretty = {
+      ...refined,
+      policy: refined.policyId,
+      reward: refined.rewardId,
+    };
+
+    delete pretty.policyId;
+    delete pretty.rewardId;
+
+    return pretty;
   }
 
   async save(data: Partial<VoucherDocument>): Promise<VoucherDocument> {

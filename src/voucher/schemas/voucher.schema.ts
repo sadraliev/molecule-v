@@ -45,14 +45,12 @@ export const VOUCHER_COLLECTION_NAME = 'vouchers';
 export const InjectVoicher = () => InjectModel(VOUCHER_COLLECTION_NAME);
 export const VoucherSchema = SchemaFactory.createForClass(VoucherDefinition);
 
-VoucherSchema.virtual('policy').get(function () {
-  return this.policyId;
-});
 VoucherSchema.set('toObject', {
-  virtuals: true,
-  transform: (doc, ret) => {
-    ret.policy = ret.policyId;
-    delete ret.policyId;
+  transform: (_, ret) => {
+    ret.id = ret._id.toString();
+
+    delete ret._id;
+    delete ret.__v;
 
     return ret;
   },

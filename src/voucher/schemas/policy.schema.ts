@@ -26,7 +26,7 @@ export const InjectPolicy = () => InjectModel(POLICY_COLLECTION_NAME);
 
 export const PolicySchema = SchemaFactory.createForClass(PolicyDefinition);
 PolicySchema.set('toObject', {
-  transform: function (_, ret) {
+  transform: (_, ret) => {
     ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;

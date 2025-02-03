@@ -26,6 +26,7 @@ import {
   VOUCHER_COLLECTION_NAME,
 } from 'src/voucher/schemas/voucher.schema';
 import { IssueModes } from 'src/voucher/types/policy.types';
+import { VoucherEntity } from 'src/voucher/types/voucher.types';
 import * as request from 'supertest';
 
 import {
@@ -67,12 +68,12 @@ describe('Card tests', () => {
     stampModel = moduleFixture.get(getModelToken(STAMP_COLLECTION_NAME));
 
     connection = voucherModel.db;
+    await connection.dropDatabase();
   });
 
   afterAll(async () => {
-    await connection.dropDatabase();
-    await app.close();
     await connection.close();
+    await app.close();
   });
 
   it('Verify single stamp addition updates a single existing card correctly in unlimited mode', async () => {
@@ -104,7 +105,7 @@ describe('Card tests', () => {
       phone: customerPhone,
     }).save();
 
-    const voucher = await voucherModel.findById(id).lean();
+    const voucher = await voucherModel.findById(id);
 
     const addOneStamp = createStampsDto((mockDto) => ({
       ...mockDto,
@@ -118,7 +119,8 @@ describe('Card tests', () => {
       voucherId: id,
     }).save();
 
-    const PATH_TO_ADD_STAMPS = '/vouchers/' + voucher._id + '/cards/stamps';
+    const PATH_TO_ADD_STAMPS =
+      '/vouchers/' + voucher.toObject<VoucherEntity>().id + '/cards/stamps';
 
     const response = await request(app.getHttpServer())
       .post(PATH_TO_ADD_STAMPS)

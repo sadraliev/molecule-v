@@ -10,8 +10,12 @@ export class CustomerRepository {
     @InjectCustomer() private readonly customerModel: CustomerModel,
   ) {}
 
-  async findByPhone(phone: PhoneNumber): Promise<CustomerEntity> {
+  async findByPhone(phone: PhoneNumber): Promise<CustomerEntity | void> {
     const document = await this.customerModel.findOne({ phone });
+
+    if (!document) {
+      return null;
+    }
 
     return document.toObject<CustomerEntity>();
   }

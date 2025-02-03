@@ -10,6 +10,7 @@ const config = {
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/src/$1',
   },
+  verbose: true,
 };
 
 module.exports = config;

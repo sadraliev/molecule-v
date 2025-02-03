@@ -30,10 +30,9 @@ export class VoucherService {
     private readonly rewardRepository: RewardRepository,
     private readonly policyRepository: PolicyRepository,
     private readonly voucherRepository: VoucherRepository,
+
     private readonly customerService: CustomerService,
-
     private readonly cardService: CardService,
-
     private readonly stampService: StampService,
   ) {}
 

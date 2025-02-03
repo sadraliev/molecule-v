@@ -82,6 +82,7 @@ export class VoucherController {
         error,
         error.stack,
       );
+      console.log('errror', error);
 
       throw new HttpException(error.status, error.message);
     }

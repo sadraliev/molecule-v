@@ -10,7 +10,7 @@ export class CustomerService {
 
   constructor(private readonly customerRepository: CustomerRepository) {}
 
-  async findByPhone(phone: PhoneNumber): Promise<CustomerEntity> {
+  async findByPhone(phone: PhoneNumber): Promise<CustomerEntity | void> {
     return this.customerRepository.findByPhone(phone);
   }
 
@@ -21,10 +21,10 @@ export class CustomerService {
   async findOrCreate(phone: PhoneNumber): Promise<CustomerEntity> {
     const customer = await this.customerRepository.findByPhone(phone);
 
-    if (customer) {
-      return customer;
+    if (!customer) {
+      return await this.customerRepository.save(phone);
     }
 
-    return await this.customerRepository.save(phone);
+    return customer;
   }
 }
